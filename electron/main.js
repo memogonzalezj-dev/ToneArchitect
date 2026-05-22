@@ -3,6 +3,34 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
+// ─── Beta expiry ──────────────────────────────────────────────────────────────
+
+const BETA_EXPIRES    = new Date("2026-09-01"); // Sept 1 — update per release
+const IS_BETA_BUILD   = true;                   // set false for production builds
+
+function checkBetaExpiry() {
+  if (!IS_BETA_BUILD) return;
+  if (new Date() < BETA_EXPIRES) return;
+
+  dialog.showMessageBoxSync({
+    type:    "error",
+    title:   "Beta Expired",
+    icon:    path.join(__dirname, "../build/icon.png"),
+    message: "This beta build has expired.",
+    detail:  [
+      "Thank you for testing Tone Architect!",
+      "",
+      "This beta expired on " + BETA_EXPIRES.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + ".",
+      "If you provided feedback, watch your email for your free permanent license.",
+      "",
+      "© 2026 Memo Gonzalez",
+    ].join("\n"),
+    buttons: ["OK"],
+  });
+
+  app.quit();
+}
+
 let llamaContext = null;
 
 function getModelPath() {
@@ -452,6 +480,7 @@ ipcMain.handle('generate-preset', async (_e, { system, prompt, temperature, maxT
 let mainWindow;
 
 app.whenReady().then(() => {
+  checkBetaExpiry();        // exits immediately if expired
   Menu.setApplicationMenu(buildMenu());
   mainWindow = createWindow();
 });
