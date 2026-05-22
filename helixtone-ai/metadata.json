@@ -1,0 +1,6 @@
+{
+  "name": "Tone Architect",
+  "description": "AI-powered guitar preset generator. Describe any artist or song and get an optimized .hlx preset file compatible with your Line 6 HX Stomp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

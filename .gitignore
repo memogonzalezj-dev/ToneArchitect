@@ -1,0 +1,21 @@
+# Build outputs
+dist/
+dist_desktop/
+node_modules/
+helixtone-ai/node_modules/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Temp / scratch
+File.txt
+
+# Electron builder cache
+/build/icon2.png
+/build/icon2.jpeg
+/build/iconAI.jpeg
+
+# Logs
+*.log
+npm-debug.log*

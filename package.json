@@ -1,0 +1,66 @@
+{
+  "name": "tone-architect",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "electron/main.js",
+  "scripts": {
+    "build": "npm --prefix helixtone-ai install && npm --prefix helixtone-ai run build -- --outDir ../dist",
+    "electron:dev": "concurrently \"npm --prefix helixtone-ai run dev\" \"wait-on -t 10000 http://127.0.0.1:5173 && electron .\"",
+    "dist:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg",
+    "dist:mas": "npm run build && electron-builder --mac mas"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "concurrently": "^9.1.0",
+    "electron": "^42.0.1",
+    "electron-builder": "^24.13.3",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.memogonzalez.tonearchitect",
+    "productName": "Tone Architect",
+    "copyright": "Copyright © 2026 Memo Gonzalez",
+    "directories": {
+      "output": "dist_desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "minimumSystemVersion": "12.0"
+    },
+    "dmg": {
+      "sign": false,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "mas": {
+      "hardenedRuntime": false,
+      "entitlements": "build/entitlements.mas.plist",
+      "entitlementsInherit": "build/entitlements.mas.plist"
+    }
+  },
+  "dependencies": {
+    "node-llama-cpp": "^3.18.1"
+  }
+}

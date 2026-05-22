@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <!-- Sandbox is REQUIRED for Mac App Store -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    <!-- Outbound network for Gemini API -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <!-- Save dialog for HLX export -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <!-- NOTE: cs.allow-jit is NOT allowed in MAS builds.
+         Electron MAS builds use a special non-JIT code path. -->
+  </dict>
+</plist>
