@@ -1,21 +1,43 @@
 # TONE ARCHITECT
 
-**AI-powered guitar preset generator for Line 6 HX devices.**
+> **AI-powered guitar preset generator for Line 6 HX devices.**
 
-Describe any artist, song, or tone — get a ready-to-import `.hlx` preset file in seconds. Runs 100% locally on your Mac. No cloud, no API keys, no subscription.
+You spent $700 on the pedal. You shouldn't have to spend 3 hours dialing in a tone.
+
+Tone Architect listens to what you want — an artist, a song, a vibe — and generates a complete, ready-to-import `.hlx` preset file optimized for your specific Line 6 device. Every block, every parameter, every signal chain order. Done in seconds.
+
+No subscriptions. No cloud. No API keys. Just your Mac, your pedal, and the tone you've been chasing.
+
+---
+
+## What It Does
+
+Type something like:
+
+> *"Edge of U2, Sunday Bloody Sunday, with a Fender Strat"*
+
+And Tone Architect:
+
+1. Selects the right amp model, cab, drive, and effects from your device's exact block library
+2. Orders them correctly in the DSP signal chain
+3. Sets every parameter to a musically sensible value
+4. Generates a `.hlx` file you can drag directly into HX Edit
+5. Gives you a step-by-step manual guide in case you want to dial it in by hand
+
+The AI runs entirely on your Mac using Apple Silicon — no internet required after the one-time model download.
 
 ---
 
 ## Features
 
-- **Natural language input** — type "David Gilmour Comfortably Numb solo" and get a full signal chain
-- **Multi-device support** — HX Stomp (6 blocks) and HX Effects (9 blocks, effects-only chain)
-- **Verified model IDs** — 200+ confirmed internal block IDs extracted from real `.hlx` files
-- **Correct HLX format** — generates files that import cleanly into HX Edit without errors
-- **Signal chain ordering** — automatically places blocks in correct DSP order (dynamics → drive → amp → cab → mod → delay → reverb)
-- **Parameter sanitization** — clamps all values to valid 0.0–1.0 range, preventing silent/broken presets
-- **Manual configuration guide** — every preset includes step-by-step knob values for entering manually on the device
-- **Runs offline** — after the one-time model download, no internet connection required
+- **Natural language input** — describe any artist, song, or tone in plain English
+- **Multi-device support** — HX Stomp (6 blocks) and HX Effects (9 blocks, effects-only)
+- **200+ verified block IDs** — every model ID confirmed from real `.hlx` files, no guessing
+- **Clean HLX output** — imports into HX Edit without errors or "unrecognized model" warnings
+- **Correct signal chain ordering** — dynamics → wah → pitch → drive → amp → cab → EQ → mod → delay → reverb
+- **Parameter guardrails** — all values clamped to valid ranges, no silent or blown-out presets
+- **Manual configuration guide** — knob-by-knob instructions on the 0–10 scale matching your device UI
+- **100% offline after setup** — your tone stays on your machine
 
 ---
 
@@ -23,30 +45,33 @@ Describe any artist, song, or tone — get a ready-to-import `.hlx` preset file 
 
 | Device | Blocks | Amp + Cab | Status |
 |---|---|---|---|
-| Line 6 HX Stomp | 6 | Yes | Live |
-| Line 6 HX Effects | 9 | No (effects only) | Live |
+| Line 6 HX Stomp | 6 | Yes | Available |
+| Line 6 HX Effects | 9 | No (effects only) | Available |
 | Line 6 HX Stomp XL | 8 | Yes | Coming soon |
 | Line 6 HX One | 1 | No | Coming soon |
 
 ---
 
-## Requirements
+## System Requirements
 
 | | |
 |---|---|
 | **Mac** | Apple Silicon (M1 or later) |
 | **macOS** | 12.0 Ventura or later |
-| **RAM** | 8 GB minimum |
-| **Disk** | ~6 GB free (for AI model) |
-| **HX Edit** | Firmware 3.7+ on your device |
+| **RAM** | 8 GB minimum (16 GB recommended) |
+| **Disk** | ~6 GB free for the AI model |
+| **HX Edit** | v3.7 or later installed on your computer |
+| **Device firmware** | 3.7 or later |
 
 ---
 
 ## How It Works
 
-Tone Architect uses a local AI model ([Meta Llama 3.1 8B](https://llama.meta.com/)) running via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp) with Apple Metal acceleration. The model is prompted with expert-level guitar tone engineering instructions and constrained to only output valid Line 6 block IDs and parameters.
+Tone Architect runs [Meta Llama 3.1 8B](https://llama.meta.com/) locally via [node-llama-cpp](https://github.com/withcatai/node-llama-cpp), accelerated by Apple Metal. The model is guided by a detailed system prompt that constrains output to valid Line 6 internal block IDs, correct parameter ranges, and proper signal chain structure.
 
-No data ever leaves your machine.
+The generated JSON is then built into a fully compliant `.hlx` file — including device ID, snapshot configuration, DSP routing, and all required metadata — that HX Edit accepts without modification.
+
+**Nothing ever leaves your Mac.**
 
 ---
 
@@ -70,7 +95,7 @@ npm run dist:mac
 The signed DMG will appear in `dist_desktop/`.
 
 > **Note:** Code signing requires an Apple Developer ID certificate.
-> Set `CSC_LINK` and `CSC_KEY_PASSWORD` environment variables or use
+> Set `CSC_LINK` and `CSC_KEY_PASSWORD` environment variables, or use
 > `CSC_IDENTITY_AUTO_DISCOVERY=false` for unsigned local builds.
 
 ---
@@ -80,21 +105,21 @@ The signed DMG will appear in `dist_desktop/`.
 ```
 ToneArchitect/
 ├── electron/
-│   ├── main.js          # Electron main process, IPC handlers, menus
-│   └── preload.js       # Context bridge (renderer ↔ main)
+│   ├── main.js            # Main process, IPC handlers, native menus
+│   └── preload.js         # Context bridge (renderer ↔ main)
 ├── helixtone-ai/
 │   └── src/
 │       ├── App.tsx                    # Main UI
 │       ├── config/
-│       │   └── devices.ts             # Device registry (block counts, IDs, models)
+│       │   └── devices.ts             # Device registry (block limits, IDs, I/O models)
 │       ├── components/
 │       │   └── LlamaSetup.tsx         # First-launch model download screen
 │       └── services/
-│           ├── llamaService.ts        # AI prompt builder + IPC calls
-│           └── helixService.ts        # HLX file generator
+│           ├── llamaService.ts        # Device-aware AI prompt builder + IPC
+│           └── helixService.ts        # HLX file generator + parameter sanitizer
 ├── build/
-│   ├── icon.icns                      # App icon
-│   ├── entitlements.mac.plist         # macOS entitlements
+│   ├── icon.icns                      # App icon (all sizes)
+│   ├── entitlements.mac.plist         # macOS hardened runtime entitlements
 │   └── entitlements.mas.plist         # Mac App Store entitlements
 └── package.json
 ```
@@ -103,7 +128,7 @@ ToneArchitect/
 
 ## Adding a New Device
 
-1. Export any preset from the target device via HX Edit
+1. Export any preset from the target device via HX Edit (File → Export → Preset)
 2. Run:
    ```bash
    python3 -c "import json; d=json.load(open('preset.hlx')); print(d['data']['device'], d['data']['device_version'])"
@@ -113,18 +138,37 @@ ToneArchitect/
 
 ---
 
-## Legal
+## Licenses
 
-Tone Architect is an **independent application** and is not affiliated with, endorsed by, or sponsored by Line 6, Inc. or Yamaha Corporation.
+This project depends on the following open-source software:
 
-"Line 6," "HX Stomp," "HX Effects," and "Helix" are registered trademarks of Line 6, Inc. All trademarks are property of their respective owners.
+| Package | License |
+|---|---|
+| [Electron](https://github.com/electron/electron) | MIT |
+| [React](https://github.com/facebook/react) | MIT |
+| [Vite](https://github.com/vitejs/vite) | MIT |
+| [node-llama-cpp](https://github.com/withcatai/node-llama-cpp) | MIT |
+| [Framer Motion](https://github.com/framer/motion) | MIT |
+| [Lucide React](https://github.com/lucide-icons/lucide) | ISC |
+| [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) | MIT |
+| [Meta Llama 3.1](https://llama.meta.com/) | [Llama Community License](https://llama.meta.com/llama3/license/) |
 
-Presets are generated by a local AI model (Meta Llama). AI output may be inaccurate or unsuitable for your hardware. Always review parameters and start at low volume before use.
+The Llama model is used under Meta's Llama Community License Agreement. If Tone Architect ever reaches 700 million monthly active users, a separate commercial license from Meta will be required. We remain cautiously optimistic.
 
-This application uses Meta's Llama model under the [Llama Community License Agreement](https://llama.meta.com/llama3/license/).
+---
+
+## Disclaimer & Legal Notice
+
+**Tone Architect is an independent, community-built application.**
+
+This software is **not affiliated with, endorsed by, sponsored by, or connected in any way to Line 6, Inc., Yamaha Corporation, or any of their subsidiaries or affiliated companies.**
+
+"Line 6," "Helix," "HX Stomp," "HX Effects," "HX Stomp XL," "HX One," and "HX Edit" are registered trademarks of Line 6, Inc. All product names, trademarks, and registered trademarks mentioned in this software are the property of their respective owners. Use of these names is for identification and compatibility purposes only and does not imply any affiliation or endorsement.
+
+Presets are generated by a local AI model and may be inaccurate, incomplete, or unsuitable for your specific hardware configuration. **Always review generated presets and test at low volume before use.** The author accepts no liability for damage to equipment, hearing loss, or data loss arising from the use of this software or any presets it generates.
 
 **© 2026 Memo Gonzalez. All rights reserved.**
 
 ---
 
-*Not affiliated with Line 6, Inc.*
+*Built by a guitarist, for guitarists. Not affiliated with Line 6, Inc.*
