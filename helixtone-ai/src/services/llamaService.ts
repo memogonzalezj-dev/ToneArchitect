@@ -1,4 +1,4 @@
-import { ToneRequest, TonePreset } from "../types";
+import { ToneRequest, TonePreset, AudioAnalysis } from "../types";
 import { DeviceConfig, DEFAULT_DEVICE } from "../config/devices";
 
 const REQUIRED_MODEL = "llama3.1:8b";
@@ -132,10 +132,27 @@ export async function pullModel(
 
 // ── Tone analysis ─────────────────────────────────────────────────────────────
 
-export async function analyzeTone(request: ToneRequest, device: DeviceConfig = DEFAULT_DEVICE): Promise<TonePreset> {
+export async function analyzeTone(
+  request: ToneRequest,
+  device: DeviceConfig = DEFAULT_DEVICE,
+  audioAnalysis?: AudioAnalysis
+): Promise<TonePreset> {
   let prompt = `RECREATE THIS TONE: "${request.query}"\n`;
   if (request.guitarType) prompt += `GUITAR: ${request.guitarType}\n`;
   if (request.hasExtraPedals) prompt += `EXTERNAL PEDALS: Yes — optimize the chain around them.\n`;
+
+  if (audioAnalysis) {
+    prompt += `\nAUDIO REFERENCE ANALYSIS (measured from the uploaded audio):\n`;
+    prompt += `  Profile: ${audioAnalysis.description}\n`;
+    prompt += `  Distortion level: ${Math.round(audioAnalysis.distortion * 100)}%\n`;
+    prompt += `  Brightness: ${Math.round(audioAnalysis.brightness * 100)}%\n`;
+    prompt += `  Bass / Mids / Treble: ${Math.round(audioAnalysis.bass * 100)}% / ${Math.round(audioAnalysis.mids * 100)}% / ${Math.round(audioAnalysis.treble * 100)}%\n`;
+    prompt += `  Compression: ${Math.round(audioAnalysis.compression * 100)}%\n`;
+    prompt += `  Reverb amount: ${Math.round(audioAnalysis.reverb * 100)}%\n`;
+    prompt += `  Delay present: ${audioAnalysis.delayPresent ? "yes" : "no"}\n`;
+    prompt += `Use these measurements to calibrate amp drive, EQ curves, and effect types/mix levels.\n`;
+  }
+
   // Reinforce the hard limit right in the user turn so it's the last thing the model sees
   prompt += `\nHARD LIMIT: Your response MUST contain exactly ${device.maxBlocks} blocks or fewer. Do NOT exceed ${device.maxBlocks} blocks under any circumstances.`;
 

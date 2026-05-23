@@ -35,6 +35,19 @@ export interface PullProgress {
   done: boolean;
 }
 
+export interface AudioAnalysis {
+  distortion:   number;   // 0-1: zero-crossing rate (high = more distortion)
+  brightness:   number;   // 0-1: spectral centroid normalized
+  bass:         number;   // 0-1: energy ratio below 300 Hz
+  mids:         number;   // 0-1: energy ratio 300 Hz – 3 kHz
+  treble:       number;   // 0-1: energy ratio above 3 kHz
+  reverb:       number;   // 0-1: envelope decay tail estimate
+  delayPresent: boolean;  // autocorrelation peak above threshold
+  compression:  number;   // 0-1: dynamic range compression (high = more compressed)
+  saturation:   number;   // 0-1: harmonic distortion estimate
+  description:  string;   // human-readable text for the Llama prompt
+}
+
 export interface ElectronAPI {
   hasApiKey: () => Promise<boolean>;
   getApiKey: () => Promise<string | null>;
@@ -64,8 +77,9 @@ export interface ElectronAPI {
     trainingConsent: boolean;
     preset_json:     string;
   }) => Promise<{ success: boolean }>;
-  getConsent: () => Promise<boolean | null>;
-  setConsent: (value: boolean) => Promise<boolean>;
+  getConsent:           () => Promise<boolean | null>;
+  setConsent:           (value: boolean) => Promise<boolean>;
+  downloadYoutubeAudio: (url: string) => Promise<Uint8Array>;
 }
 
 declare global {
