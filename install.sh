@@ -15,7 +15,6 @@ echo "  TONE ARCHITECT — Installer v${VERSION}"
 echo "  ─────────────────────────────────────"
 echo ""
 
-# Check Apple Silicon
 if [[ $(uname -m) != "arm64" ]]; then
   echo "  ✗ This build requires Apple Silicon (M1 or later)."
   exit 1
@@ -25,19 +24,25 @@ echo "  → Downloading Tone Architect v${VERSION}..."
 curl -L --progress-bar "$DOWNLOAD_URL" -o "$TMP_DMG"
 
 echo "  → Mounting disk image..."
-MOUNT_POINT=$(hdiutil attach "$TMP_DMG" -nobrowse -quiet | awk -F'\t' 'END{print $NF}')
+hdiutil attach "$TMP_DMG" -nobrowse -quiet
+
+echo "  → Finding app..."
+APP_PATH=$(find /Volumes -name "Tone Architect.app" -maxdepth 3 2>/dev/null | head -1)
+
+if [[ -z "$APP_PATH" ]]; then
+  echo "  ✗ Could not find Tone Architect.app in mounted DMG."
+  exit 1
+fi
 
 echo "  → Installing to ${INSTALL_DIR}..."
-if [[ -d "${INSTALL_DIR}/${APP_NAME}" ]]; then
-  rm -rf "${INSTALL_DIR}/${APP_NAME}"
-fi
-cp -R "${MOUNT_POINT}/${APP_NAME}" "${INSTALL_DIR}/"
+rm -rf "${INSTALL_DIR}/${APP_NAME}"
+cp -R "$APP_PATH" "${INSTALL_DIR}/"
 
 echo "  → Removing macOS quarantine flag..."
 xattr -cr "${INSTALL_DIR}/${APP_NAME}"
 
 echo "  → Cleaning up..."
-hdiutil detach "$MOUNT_POINT" -quiet
+hdiutil detach "$(dirname "$APP_PATH")" -quiet 2>/dev/null || true
 rm -f "$TMP_DMG"
 
 echo ""
