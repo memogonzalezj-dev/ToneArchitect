@@ -29,7 +29,7 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
       blocks:      preset.blocks.length,
       rating,
       feedback:    feedback.trim(),
-      app_version: "1.0.0-beta",
+      app_version: "1.0.1-beta",
     };
 
     try {
