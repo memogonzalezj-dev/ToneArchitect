@@ -43,7 +43,7 @@ export interface AudioAnalysis {
   treble:       number;   // 0-1: energy ratio above 3 kHz
   reverb:       number;   // 0-1: envelope decay tail estimate
   delayPresent: boolean;  // autocorrelation peak above threshold
-  compression:  number;   // 0-1: dynamic range compression (high = more compressed)
+  compression:  number;   // 0-1: dynamic range compression
   saturation:   number;   // 0-1: harmonic distortion estimate
   description:  string;   // human-readable text for the Llama prompt
 }
