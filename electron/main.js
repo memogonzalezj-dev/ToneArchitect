@@ -3,7 +3,36 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
-let llamaContext = null;
+// ─── Beta expiry ──────────────────────────────────────────────────────────────
+
+const BETA_EXPIRES    = new Date("2026-09-01"); // Sept 1 — update per release
+const IS_BETA_BUILD   = true;                   // set false for production builds
+
+function checkBetaExpiry() {
+  if (!IS_BETA_BUILD) return;
+  if (new Date() < BETA_EXPIRES) return;
+
+  dialog.showMessageBoxSync({
+    type:    "error",
+    title:   "Beta Expired",
+    icon:    path.join(__dirname, "../build/icon.png"),
+    message: "This beta build has expired.",
+    detail:  [
+      "Thank you for testing Tone Architect!",
+      "",
+      "This beta expired on " + BETA_EXPIRES.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) + ".",
+      "If you provided feedback, watch your email for your free permanent license.",
+      "",
+      "© 2026 Memo Gonzalez",
+    ].join("\n"),
+    buttons: ["OK"],
+  });
+
+  app.quit();
+}
+
+let llama      = null;   // Llama instance (v3 API)
+let llamaModel = null;   // loaded model  (v3 API)
 
 function getModelPath() {
   return path.join(app.getPath('userData'), 'models', 'llama3.1-8b.gguf');
@@ -14,65 +43,61 @@ function getModelsDir() {
 }
 
 async function initializeLlama() {
-  if (llamaContext) return true;
+  if (llamaModel) return true;
 
   const modelPath = getModelPath();
   if (!fs.existsSync(modelPath)) return false;
 
   try {
-    const { LlamaModel, LlamaContext } = require('node-llama-cpp');
-    const model = new LlamaModel({ modelPath, gpuLayers: 35 });
-    llamaContext = new LlamaContext({ model });
+    // node-llama-cpp v3 is an ES module — must use dynamic import(), not require()
+    const { getLlama } = await import('node-llama-cpp');
+    if (!llama) llama = await getLlama();
+    llamaModel = await llama.loadModel({ modelPath });
+    console.log('[Llama] Model loaded successfully from', modelPath);
     return true;
   } catch (err) {
-    console.error('Failed to initialize Llama:', err);
+    console.error('[Llama] Failed to initialize:', err);
+    llamaModel = null;
+    llama      = null;
     return false;
   }
 }
 
-function downloadLlamaModel(win) {
-  return new Promise((resolve, reject) => {
-    const modelDir = getModelsDir();
-    const modelPath = getModelPath();
+async function downloadLlamaModel(win) {
+  const modelDir  = getModelsDir();
+  const modelPath = getModelPath();
 
-    if (!fs.existsSync(modelDir)) {
-      fs.mkdirSync(modelDir, { recursive: true });
-    }
+  if (!fs.existsSync(modelDir)) {
+    fs.mkdirSync(modelDir, { recursive: true });
+  }
 
-    // Using a smaller model URL for faster testing/development
-    const modelUrl = 'https://huggingface.co/lmstudio-ai/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf?download=true';
-    const modelSize = 5_000_000_000; // approximately 5GB for Q4_K_M quantization
+  // Delete any existing corrupt/partial file
+  if (fs.existsSync(modelPath)) fs.unlinkSync(modelPath);
 
-    const file = fs.createWriteStream(modelPath);
-    let downloadedBytes = 0;
+  // Use node-llama-cpp's built-in downloader — handles HuggingFace LFS redirects,
+  // auth headers, and partial-resume automatically.
+  const { createModelDownloader } = await import('node-llama-cpp');
 
-    https.get(modelUrl, (response) => {
-      const totalBytes = parseInt(response.headers['content-length'], 10) || modelSize;
-
-      response.on('data', (chunk) => {
-        downloadedBytes += chunk.length;
-        const percent = Math.round((downloadedBytes / totalBytes) * 100);
-        win.webContents.send('model-download-progress', {
-          status: `Downloading (${(downloadedBytes / 1_000_000_000).toFixed(1)} GB / ${(totalBytes / 1_000_000_000).toFixed(1)} GB)...`,
-          percent: Math.min(percent, 99),
-          done: false,
-        });
+  const downloader = await createModelDownloader({
+    modelUri: 'hf:bartowski/Meta-Llama-3.1-8B-Instruct-GGUF/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf',
+    dirPath:  modelDir,
+    fileName: 'llama3.1-8b.gguf',
+    onProgress({ downloadedSize, totalSize }) {
+      const percent = totalSize > 0 ? Math.round((downloadedSize / totalSize) * 100) : 0;
+      win.webContents.send('model-download-progress', {
+        status:  `Downloading (${(downloadedSize / 1e9).toFixed(1)} GB / ${(totalSize / 1e9).toFixed(1)} GB)…`,
+        percent: Math.min(percent, 99),
+        done:    false,
       });
+    },
+  });
 
-      response.pipe(file);
-      file.on('finish', () => {
-        file.close();
-        win.webContents.send('model-download-progress', {
-          status: 'Download complete, initializing...',
-          percent: 100,
-          done: true,
-        });
-        resolve();
-      });
-    }).on('error', (err) => {
-      fs.unlink(modelPath, () => {});
-      reject(new Error(`Download failed: ${err.message}`));
-    });
+  await downloader.download();
+
+  win.webContents.send('model-download-progress', {
+    status:  'Download complete, initializing…',
+    percent: 100,
+    done:    true,
   });
 }
 
@@ -165,7 +190,7 @@ TIPS
 
 ABOUT
 ─────
-Tone Architect v1.0.0
+Tone Architect v1.0.2
 © 2026 Memo Gonzalez
 
 This software is not affiliated with, endorsed by, or sponsored by Line 6, Inc.
@@ -203,7 +228,7 @@ function buildMenu() {
               title: 'About Tone Architect',
               message: 'Tone Architect',
               detail: [
-                'Version 1.0.0',
+                'Version 1.0.2',
                 'Created by Memo Gonzalez',
                 '© 2026 Memo Gonzalez',
                 '',
@@ -345,6 +370,24 @@ function createWindow() {
   return win;
 }
 
+// ─── IPC: Training-data consent ───────────────────────────────────────────────
+
+function getConsentPath() {
+  return path.join(app.getPath('userData'), 'consent.json');
+}
+
+ipcMain.handle('get-consent', () => {
+  const p = getConsentPath();
+  if (!fs.existsSync(p)) return null;        // null = never asked
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')).consent ?? null; }
+  catch { return null; }
+});
+
+ipcMain.handle('set-consent', (_e, value) => {
+  fs.writeFileSync(getConsentPath(), JSON.stringify({ consent: !!value }));
+  return true;
+});
+
 // ─── IPC: API key ─────────────────────────────────────────────────────────────
 
 ipcMain.handle('has-api-key', () => fs.existsSync(getKeyPath()));
@@ -404,6 +447,72 @@ ipcMain.handle('save-helix-preset', async (_e, { filename, content }) => {
   return { success: false };
 });
 
+// ─── IPC: Beta feedback ───────────────────────────────────────────────────────
+// Paste your Google Apps Script Web App URL here after deploying it.
+// Leave empty to silently skip submission during local development.
+const FEEDBACK_ENDPOINT = "https://script.google.com/macros/s/AKfycbwhaQV805K3R3kw5uIvuKpwFg8kV8hvBCFh9tWBQ-4KAdlFJc9Cy-RjQeOtarz8_CU/exec";
+
+// POST with redirect following — keeps POST method across all redirects
+// (Google Apps Script 302s to script.googleusercontent.com but must stay POST)
+function postWithRedirects(urlString, body, maxRedirects = 5) {
+  return new Promise((resolve, reject) => {
+    const attempt = (currentUrl, remaining) => {
+      const url     = new URL(currentUrl);
+      const module_ = url.protocol === 'https:' ? https : require('http');
+      const options = {
+        hostname: url.hostname,
+        path:     url.pathname + url.search,
+        method:   'POST',
+        headers:  {
+          'Content-Type':   'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        },
+      };
+
+      const req = module_.request(options, (res) => {
+        console.log('[Feedback] HTTP', res.statusCode, currentUrl);
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          if (remaining <= 0) return reject(new Error('Too many redirects'));
+          res.resume(); // drain before next request
+          attempt(res.headers.location, remaining - 1);
+          return;
+        }
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          console.log('[Feedback] Response:', data.slice(0, 200));
+          resolve(data);
+        });
+      });
+
+      req.on('error', reject);
+      req.write(body);
+      req.end();
+    };
+
+    attempt(urlString, maxRedirects);
+  });
+}
+
+ipcMain.handle('submit-feedback', async (_e, payload) => {
+  if (!FEEDBACK_ENDPOINT) return { success: false, reason: "no endpoint configured" };
+
+  // Never include raw query text in training data unless user explicitly consented
+  if (!payload.trainingConsent) {
+    payload = { ...payload, query: "[redacted]", feedback: "[redacted]" };
+  }
+
+  try {
+    const body = JSON.stringify(payload);
+    const raw  = await postWithRedirects(FEEDBACK_ENDPOINT, body);
+    try { return JSON.parse(raw); }
+    catch { return { success: true }; }
+  } catch (err) {
+    console.error('[Feedback] Submit error:', err.message);
+    return { success: false, reason: err.message };
+  }
+});
+
 // ─── IPC: Llama model ─────────────────────────────────────────────────────────
 
 ipcMain.handle('check-llama-ready', async () => {
@@ -420,7 +529,8 @@ ipcMain.handle('download-model', async (_e) => {
 
   try {
     await downloadLlamaModel(win);
-    await initializeLlama();
+    const ok = await initializeLlama();
+    if (!ok) throw new Error('Model downloaded but failed to initialize. Please restart the app.');
     return true;
   } catch (err) {
     throw new Error(err instanceof Error ? err.message : 'Model download failed');
@@ -428,22 +538,29 @@ ipcMain.handle('download-model', async (_e) => {
 });
 
 ipcMain.handle('generate-preset', async (_e, { system, prompt, temperature, maxTokens }) => {
-  if (!llamaContext) {
+  if (!llamaModel) {
     throw new Error('Llama model not initialized. Please download the model first.');
   }
 
+  let context;
   try {
-    const fullPrompt = `${system}\n\nUser: ${prompt}\n\nAssistant:`;
-
-    const response = await llamaContext.generateCompletion(fullPrompt, {
-      temperature: temperature || 0.3,
-      maxTokens: maxTokens || 4096,
-      topP: 0.9,
+    const { LlamaChatSession } = await import('node-llama-cpp');
+    context = await llamaModel.createContext();
+    const session = new LlamaChatSession({
+      contextSequence: context.getSequence(),
+      systemPrompt: system,
     });
 
-    return response.completion || response;
+    const response = await session.prompt(prompt, {
+      temperature: temperature ?? 0.3,
+      maxTokens:   maxTokens   ?? 4096,
+    });
+
+    return response;
   } catch (err) {
     throw new Error(err instanceof Error ? err.message : 'Model generation failed');
+  } finally {
+    if (context) await context.dispose();
   }
 });
 
@@ -452,6 +569,7 @@ ipcMain.handle('generate-preset', async (_e, { system, prompt, temperature, maxT
 let mainWindow;
 
 app.whenReady().then(() => {
+  checkBetaExpiry();        // exits immediately if expired
   Menu.setApplicationMenu(buildMenu());
   mainWindow = createWindow();
 });

@@ -1,12 +1,12 @@
 {
   "name": "tone-architect",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.2",
   "type": "commonjs",
   "main": "electron/main.js",
   "scripts": {
     "build": "npm --prefix helixtone-ai install && npm --prefix helixtone-ai run build -- --outDir ../dist",
-    "electron:dev": "concurrently \"npm --prefix helixtone-ai run dev\" \"wait-on -t 10000 http://127.0.0.1:5173 && electron .\"",
+    "electron:dev": "concurrently \"npm --prefix helixtone-ai run dev\" \"wait-on -t 15000 http://127.0.0.1:5173 && electron .\"",
     "dist:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg",
     "dist:mas": "npm run build && electron-builder --mac mas"
   },

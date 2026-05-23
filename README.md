@@ -73,36 +73,153 @@ The generated JSON is then built into a fully compliant `.hlx` file — includin
 
 **Nothing ever leaves your Mac.**
 
+---
 
+## Development Setup
 
-**Licenses**
-This project depends on the following open-source software:
+```bash
+# Install dependencies
+npm install
+npm --prefix helixtone-ai install
 
-| | |
-|---|---|
-| **Package** | License |
-| **Electron** | MIT|
-| **React** | MIT |
-| **Vite** | MIT |
-| **node-llama-cpp** | MIT |
-| **Framer Motion** | MIT |
-| **Lucide React** | ISC |
-| **Tailwind CSS** | MIT |
-| **Meta Llama 3.1** | Llama Community License |
+# Run in development mode (Electron + Vite hot reload)
+npm run electron:dev
+```
+
+### Build a distributable DMG
+
+```bash
+npm run dist:mac
+```
+
+The signed DMG will appear in `dist_desktop/`.
+
+> **Note:** Code signing requires an Apple Developer ID certificate.
+> Set `CSC_LINK` and `CSC_KEY_PASSWORD` environment variables, or use
+> `CSC_IDENTITY_AUTO_DISCOVERY=false` for unsigned local builds.
 
 ---
-The Llama model is used under Meta's Llama Community License Agreement. 
-If Tone Architect ever reaches 700 million monthly active users, a separate commercial license from Meta will be required.
-We remain cautiously optimistic.
 
+## Versioning
 
+Tone Architect uses a three-part version number: `MAJOR.MINOR.PATCH`
 
-**Disclaimer & Legal Notice**
+| Increment | Example | When |
+|---|---|---|
+| **Patch** | `1.0.1` → `1.0.2` | Bug fixes, small features, each dev session |
+| **Minor** | `1.0.2` → `1.1.0` | Significant features, major review, new device support |
+| **Major** | `1.1.0` → `2.0.0` | Public launch, breaking changes, architecture rewrite |
 
-Tone Architect is an independent application
+Files that must be updated on every version bump:
 
-This software is not affiliated with, endorsed by, sponsored by, or connected in any way to Line 6, Inc., Yamaha Corporation, or any of their subsidiaries or affiliated companies.
+| File | Field |
+|---|---|
+| `package.json` | `"version"` |
+| `electron/main.js` | About dialog string + `USER_GUIDE` header |
+| `helixtone-ai/src/components/FeedbackPanel.tsx` | `app_version` field in feedback payload |
+
+---
+
+## Changelog
+
+### v1.0.1 — Beta (2026-05-23)
+
+#### What's New for Users
+
+**⭐ Rate your presets**
+After each preset is generated, a feedback panel appears in the bottom-right corner. Give it 1–5 stars and leave an optional comment about what was off — too much gain, wrong cab, missing chorus, etc. Your feedback goes directly to the developer and helps improve future versions.
+
+**🔒 Privacy consent**
+On first launch after updating, you'll see a one-time screen asking if you'd like to share your tone queries and ratings to help improve the AI. You can say yes or no — and change your mind any time by tapping the shield icon at the bottom of the feedback panel. No personal data, no IP address, no identifiers are ever collected.
+
+**🛠 DSP block limit fixed**
+In some cases the AI was generating one too many blocks (e.g. 7 blocks for the HX Stomp's 6-block limit). This is now enforced in code — presets will always respect your device's exact block count, no matter what the AI outputs.
+
+#### Under the Hood
+- AI model initialization completely rewritten for `node-llama-cpp` v3
+- Model download now uses the official HuggingFace downloader — no more corrupt files or failed downloads
+- Feedback submission fixed to correctly reach Google Sheets
+
+---
+
+### v1.0.0 — Beta (2026-05-01)
+- Initial beta release
+- HX Stomp and HX Effects support
+- Local Llama 3.1 8B inference via Apple Metal
+- `.hlx` preset export compatible with HX Edit 3.7+
+
+---
+
+## Project Structure
+
+```
+ToneArchitect/
+├── electron/
+│   ├── main.js            # Main process, IPC handlers, native menus
+│   └── preload.js         # Context bridge (renderer ↔ main)
+├── helixtone-ai/
+│   └── src/
+│       ├── App.tsx                    # Main UI
+│       ├── config/
+│       │   └── devices.ts             # Device registry (block limits, IDs, I/O models)
+│       ├── components/
+│       │   ├── LlamaSetup.tsx         # First-launch model download + consent screen
+│       │   └── FeedbackPanel.tsx      # Star rating + feedback submission panel
+│       └── services/
+│           ├── llamaService.ts        # Device-aware AI prompt builder + IPC
+│           └── helixService.ts        # HLX file generator + parameter sanitizer
+├── build/
+│   ├── icon.icns                      # App icon (all sizes)
+│   ├── entitlements.mac.plist         # macOS hardened runtime entitlements
+│   └── entitlements.mas.plist         # Mac App Store entitlements
+└── package.json
+```
+
+---
+
+## Adding a New Device
+
+1. Export any preset from the target device via HX Edit (File → Export → Preset)
+2. Run:
+   ```bash
+   python3 -c "import json; d=json.load(open('preset.hlx')); print(d['data']['device'], d['data']['device_version'])"
+   ```
+3. Add an entry to `helixtone-ai/src/config/devices.ts` with the confirmed values
+4. Set `available: true`
+
+---
+
+## Licenses
+
+This project depends on the following open-source software:
+
+| Package | License |
+|---|---|
+| [Electron](https://github.com/electron/electron) | MIT |
+| [React](https://github.com/facebook/react) | MIT |
+| [Vite](https://github.com/vitejs/vite) | MIT |
+| [node-llama-cpp](https://github.com/withcatai/node-llama-cpp) | MIT |
+| [Framer Motion](https://github.com/framer/motion) | MIT |
+| [Lucide React](https://github.com/lucide-icons/lucide) | ISC |
+| [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) | MIT |
+| [Meta Llama 3.1](https://llama.meta.com/) | [Llama Community License](https://llama.meta.com/llama3/license/) |
+
+The Llama model is used under Meta's Llama Community License Agreement. If Tone Architect ever reaches 700 million monthly active users, a separate commercial license from Meta will be required. We remain cautiously optimistic.
+
+---
+
+## Disclaimer & Legal Notice
+
+**Tone Architect is an independent, community-built application.**
+
+This software is **not affiliated with, endorsed by, sponsored by, or connected in any way to Line 6, Inc., Yamaha Corporation, or any of their subsidiaries or affiliated companies.**
 
 "Line 6," "Helix," "HX Stomp," "HX Effects," "HX Stomp XL," "HX One," and "HX Edit" are registered trademarks of Line 6, Inc. All product names, trademarks, and registered trademarks mentioned in this software are the property of their respective owners. Use of these names is for identification and compatibility purposes only and does not imply any affiliation or endorsement.
 
-Presets are generated by a local AI model and may be inaccurate, incomplete, or unsuitable for your specific hardware configuration. Always review generated presets and test at low volume before use. The author accepts no liability for damage to equipment, hearing loss, or data loss arising from the use of this software or any presets it generates.
+Presets are generated by a local AI model and may be inaccurate, incomplete, or unsuitable for your specific hardware configuration. **Always review generated presets and test at low volume before use.** The author accepts no liability for damage to equipment, hearing loss, or data loss arising from the use of this software or any presets it generates.
+
+**© 2026 Memo Gonzalez. All rights reserved.**
+
+---
+
+*Built by a guitarist, for guitarists. Not affiliated with Line 6, Inc.*
