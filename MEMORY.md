@@ -16,7 +16,7 @@ Runs 100% locally via local Llama 3.1 8B + Apple Metal. No cloud. No subscriptio
 
 ---
 
-## Current Version: 1.0.2
+## Current Version: 1.1.0
 
 ### Version bump checklist (every release):
 - [ ] `package.json` → `"version"`
@@ -130,56 +130,34 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ## Last Session Work (2026-05-23)
 
-### Completed
-- Fixed node-llama-cpp v2 → v3 API (dynamic import, LlamaChatSession, context disposal)
-- Fixed model download (built-in HuggingFace downloader, bartowski public mirror)
-- Fixed feedback POST (redirect-following, Google Apps Script 302 handling)
-- Added beta feedback panel (star rating + optional comment)
-- Added training-data consent screen (first launch, stored locally)
-- Added `preset_json` to feedback payload for future fine-tuning
-- DSP block hard cap enforced in code (model output always sliced to `device.maxBlocks`)
-- Fixed Vite dev port (3000 → 5173)
-- Added `install.sh` one-command installer (Gatekeeper quarantine fix)
-- Merged everything to `main`, repo made public
+### Completed — v1.1.0 Audio Analysis Feature
+- **arm64-only confirmed** — Intel Macs explicitly unsupported (LLM CPU fallback = unusable)
+- Startup arch guard: shows friendly error dialog and quits on non-arm64
+- Bundled `yt-dlp` universal macOS binary in `resources/bin/yt-dlp` (committed to repo)
+- Added `ffmpeg-static` npm dep + `asarUnpack` for packaging
+- `package.json`: `extraResources` for bin/, explicit `target: arm64` DMG build
+- IPC `download-youtube-audio`: shells yt-dlp, grabs first 30s as mono WAV, returns Buffer to renderer
+- NEW `audioAnalysis.ts`: radix-2 FFT, ZCR, spectral centroid, band energy, envelope decay, autocorrelation, dynamic range → `AudioAnalysis` interface + text description
+- `llamaService.ts`: `analyzeTone()` accepts optional `AudioAnalysis`, injects measurements into Llama prompt
+- `App.tsx`: Audio Reference panel — FILE / YOUTUBE toggle, analysing spinner, result badge showing description, clear button
+- All changes on branch `session/v1.1.0-audio-analysis` — awaiting user push + merge
 
 ### Known Issues
 - HX Stomp XL and HX One still `available: false` — need real `.hlx` files to confirm device IDs
 - Apple Developer ID not purchased yet ($99) — app is unsigned, install.sh handles quarantine
+- v1.1.0 not yet merged to `main` or released as DMG
 
 ---
 
-## Next Session: Audio Analysis Feature (v1.1.0)
+## Next Session Ideas
 
-### Feature spec
-User uploads an audio file of a tone they want to replicate.
-App analyzes it locally (no cloud) and generates a matching preset.
-
-### Architecture (100% local — no Gemini needed)
-1. **Web Audio API** (built into Electron/browser) analyzes the audio file
-2. Extracts: distortion level, brightness, low/mid/high balance, reverb tail, delay presence, compression, clean vs saturated
-3. Converts measurements to a text description
-4. Passes text description to local Llama → generates preset
-
-### Signal processing → preset mapping
-| Measurement | API method | Maps to |
-|---|---|---|
-| Distortion | Zero-crossing rate | Drive/Gain values |
-| Brightness | Spectral centroid | Treble/Tone/Presence |
-| Low end | Low-freq energy ratio | Bass knob |
-| Reverb | RT60 decay estimation | Reverb mix + size |
-| Delay | Autocorrelation | Delay time + mix |
-| Compression | Dynamic range ratio | Compressor threshold |
-| Saturation | Harmonic distortion | Amp type selection |
-
-### Files to create/modify
-- `helixtone-ai/src/services/audioAnalysis.ts` ← NEW
-- `helixtone-ai/src/App.tsx` — wire upload audio → analysis → inject into prompt
-- `helixtone-ai/src/services/llamaService.ts` — accept audio descriptor in prompt
-- `helixtone-ai/src/types.ts` — add `AudioAnalysis` interface
+- **Merge + release v1.1.0**: merge branch to main, bump version in package.json / main.js / FeedbackPanel.tsx, build new DMG, create GitHub release
+- **HX Stomp XL / HX One support**: need a real `.hlx` export from each device to confirm `device_id`
+- **Audio analysis tuning**: collect beta feedback on whether audio reference improves preset quality
 
 ### Start command for next session
 ```bash
-cd /Users/memo/ToneAI && git checkout main && git pull origin main && git checkout -b session/v1.1.0-audio-analysis
+cd /Users/memo/ToneAI && git checkout main && git pull origin main
 ```
 
 ---
