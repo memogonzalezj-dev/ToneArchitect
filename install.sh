@@ -25,7 +25,7 @@ echo "  → Downloading Tone Architect v${VERSION}..."
 curl -L --progress-bar "$DOWNLOAD_URL" -o "$TMP_DMG"
 
 echo "  → Mounting disk image..."
-MOUNT_POINT=$(hdiutil attach "$TMP_DMG" -nobrowse -quiet | awk 'END{print $NF}')
+MOUNT_POINT=$(hdiutil attach "$TMP_DMG" -nobrowse -quiet | awk -F'\t' 'END{print $NF}')
 
 echo "  → Installing to ${INSTALL_DIR}..."
 if [[ -d "${INSTALL_DIR}/${APP_NAME}" ]]; then
