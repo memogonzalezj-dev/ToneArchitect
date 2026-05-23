@@ -577,7 +577,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-white/10 px-8 py-5 flex items-center justify-between bg-black text-[9px] uppercase tracking-[0.25em] text-white/20">
-        <div>Tone Architect v1.0.0 • Not affiliated with Line 6, Inc.</div>
+        <div>Tone Architect v1.1.0 • Not affiliated with Line 6, Inc.</div>
         <div>© 2026 MEMO GONZALEZ • Compatible with Line 6 {device.label}</div>
       </footer>
 
