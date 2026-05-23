@@ -2,9 +2,10 @@
 set -e
 
 VERSION="1.0.2"
+TAG="v1.0.2.1"
 REPO="memogonzalezj-dev/ToneArchitect"
-DMG_NAME="Tone Architect-${VERSION}-arm64.dmg"
-DOWNLOAD_URL="https://github.com/${REPO}/releases/download/v${VERSION}/${DMG_NAME// /.}"
+DMG_NAME="Tone.Architect-${VERSION}-arm64.dmg"
+DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/${DMG_NAME}"
 TMP_DMG="/tmp/ToneArchitect.dmg"
 APP_NAME="Tone Architect.app"
 INSTALL_DIR="/Applications"
