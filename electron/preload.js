@@ -19,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadModel:    ()            => ipcRenderer.invoke('download-model'),
   generatePreset:   (config)      => ipcRenderer.invoke('generate-preset', config),
   onModelProgress:  (callback)    => { progressCallback = callback; },
+  submitFeedback:   (payload)     => ipcRenderer.invoke('submit-feedback', payload),
 });

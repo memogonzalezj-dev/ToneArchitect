@@ -432,6 +432,43 @@ ipcMain.handle('save-helix-preset', async (_e, { filename, content }) => {
   return { success: false };
 });
 
+// ─── IPC: Beta feedback ───────────────────────────────────────────────────────
+// Paste your Google Apps Script Web App URL here after deploying it.
+// Leave empty to silently skip submission during local development.
+const FEEDBACK_ENDPOINT = ""; // ← paste your Apps Script URL here
+
+ipcMain.handle('submit-feedback', async (_e, payload) => {
+  if (!FEEDBACK_ENDPOINT) return { success: false, reason: "no endpoint configured" };
+
+  return new Promise((resolve) => {
+    const body = JSON.stringify(payload);
+    const url  = new URL(FEEDBACK_ENDPOINT);
+
+    const options = {
+      hostname: url.hostname,
+      path:     url.pathname + url.search,
+      method:   "POST",
+      headers:  {
+        "Content-Type":   "application/json",
+        "Content-Length": Buffer.byteLength(body),
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => { data += chunk; });
+      res.on("end", () => {
+        try { resolve(JSON.parse(data)); }
+        catch { resolve({ success: true }); }
+      });
+    });
+
+    req.on("error", (err) => resolve({ success: false, reason: err.message }));
+    req.write(body);
+    req.end();
+  });
+});
+
 // ─── IPC: Llama model ─────────────────────────────────────────────────────────
 
 ipcMain.handle('check-llama-ready', async () => {

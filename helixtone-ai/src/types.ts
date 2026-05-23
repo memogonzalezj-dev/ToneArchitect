@@ -52,6 +52,16 @@ export interface ElectronAPI {
   }) => Promise<string>;
   onModelProgress: (callback: (data: PullProgress) => void) => void;
   onProgress?: (callback: (data: PullProgress) => void) => void;
+  submitFeedback: (payload: {
+    timestamp:   string;
+    device:      string;
+    query:       string;
+    preset_name: string;
+    blocks:      number;
+    rating:      number;
+    feedback:    string;
+    app_version: string;
+  }) => Promise<{ success: boolean }>;
 }
 
 declare global {

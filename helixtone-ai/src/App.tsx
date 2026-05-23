@@ -11,12 +11,14 @@ import {
   FileAudio,
   Cpu,
   ChevronDown,
+  Star,
 } from "lucide-react";
 import { analyzeTone } from "./services/llamaService";
 import { downloadPreset } from "./services/helixService";
 import { TonePreset, ToneRequest } from "./types";
 import { DEVICES, DeviceConfig, DEFAULT_DEVICE } from "./config/devices";
 import LlamaSetup from "./components/LlamaSetup";
+import FeedbackPanel from "./components/FeedbackPanel";
 
 type AppView = "checking" | "setup" | "main";
 
@@ -25,9 +27,10 @@ export default function App() {
   const [loading, setLoading]   = useState(false);
   const [preset, setPreset]     = useState<TonePreset | null>(null);
   const [error, setError]       = useState<string | null>(null);
-  const [device, setDevice]     = useState<DeviceConfig>(DEFAULT_DEVICE);
+  const [device, setDevice]         = useState<DeviceConfig>(DEFAULT_DEVICE);
   const [deviceOpen, setDeviceOpen] = useState(false);
-  const deviceRef               = useRef<HTMLDivElement>(null);
+  const deviceRef                   = useRef<HTMLDivElement>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const [query, setQuery]         = useState("");
   const [guitar, setGuitar]       = useState("");
@@ -77,6 +80,7 @@ export default function App() {
       };
       const result = await analyzeTone(request, device);
       setPreset(result);
+      setShowFeedback(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze tone. Please try again.");
     } finally {
@@ -356,14 +360,23 @@ export default function App() {
                   </div>
                 </section>
 
-                <section className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-sm text-center">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 block mb-4">Ready for Export</span>
+                <section className="space-y-3">
+                  <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-sm text-center">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 block mb-4">Ready for Export</span>
+                    <button
+                      onClick={() => downloadPreset(preset, device)}
+                      className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 font-bold tracking-[0.3em] text-[10px] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      SAVE .HLX PRESET
+                    </button>
+                  </div>
                   <button
-                    onClick={() => downloadPreset(preset, device)}
-                    className="w-full bg-blue-500 hover:bg-blue-400 text-white py-4 font-bold tracking-[0.3em] text-[10px] transition-colors flex items-center justify-center gap-2"
+                    onClick={() => setShowFeedback(true)}
+                    className="w-full h-9 border border-white/10 text-white/30 hover:text-white/60 hover:border-white/20 text-[10px] font-mono tracking-widest transition-colors flex items-center justify-center gap-2"
                   >
-                    <Download className="w-4 h-4" />
-                    SAVE .HLX PRESET
+                    <Star className="w-3 h-3" />
+                    RATE THIS PRESET
                   </button>
                 </section>
               </aside>
@@ -460,6 +473,17 @@ export default function App() {
         <div>Tone Architect v1.0.0 • Not affiliated with Line 6, Inc.</div>
         <div>© 2026 MEMO GONZALEZ • Compatible with Line 6 {device.label}</div>
       </footer>
+
+      <AnimatePresence>
+        {showFeedback && preset && (
+          <FeedbackPanel
+            preset={preset}
+            device={device}
+            query={query}
+            onClose={() => setShowFeedback(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {error && (
