@@ -19,7 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadModel:    ()            => ipcRenderer.invoke('download-model'),
   generatePreset:   (config)      => ipcRenderer.invoke('generate-preset', config),
   onModelProgress:  (callback)    => { progressCallback = callback; },
-  submitFeedback:   (payload)     => ipcRenderer.invoke('submit-feedback', payload),
-  getConsent:       ()            => ipcRenderer.invoke('get-consent'),
-  setConsent:       (value)       => ipcRenderer.invoke('set-consent', value),
+  submitFeedback:        (payload) => ipcRenderer.invoke('submit-feedback', payload),
+  getConsent:            ()        => ipcRenderer.invoke('get-consent'),
+  setConsent:            (value)   => ipcRenderer.invoke('set-consent', value),
+  downloadYoutubeAudio:  (url)     => ipcRenderer.invoke('download-youtube-audio', url),
 });

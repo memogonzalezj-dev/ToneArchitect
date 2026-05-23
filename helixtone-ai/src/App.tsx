@@ -12,10 +12,14 @@ import {
   Cpu,
   ChevronDown,
   Star,
+  Youtube,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { analyzeTone } from "./services/llamaService";
+import { analyzeAudio, analyzeYoutubeAudio } from "./services/audioAnalysis";
 import { downloadPreset } from "./services/helixService";
-import { TonePreset, ToneRequest } from "./types";
+import { TonePreset, ToneRequest, AudioAnalysis } from "./types";
 import { DEVICES, DeviceConfig, DEFAULT_DEVICE } from "./config/devices";
 import LlamaSetup from "./components/LlamaSetup";
 import FeedbackPanel from "./components/FeedbackPanel";
@@ -36,7 +40,14 @@ export default function App() {
   const [guitar, setGuitar]       = useState("");
   const [hasPedals, setHasPedals] = useState(false);
   const [gearImage, setGearImage] = useState<string | null>(null);
-  const [audioSample, setAudioSample] = useState<string | null>(null);
+
+  // Audio reference state
+  const [audioAnalysis, setAudioAnalysis]     = useState<AudioAnalysis | null>(null);
+  const [audioLabel, setAudioLabel]           = useState<string | null>(null);
+  const [audioMode, setAudioMode]             = useState<"file" | "youtube">("file");
+  const [youtubeUrl, setYoutubeUrl]           = useState("");
+  const [audioAnalysing, setAudioAnalysing]   = useState(false);
+  const [audioError, setAudioError]           = useState<string | null>(null);
 
   // Close device dropdown on outside click
   useEffect(() => {
@@ -54,16 +65,53 @@ export default function App() {
     setView("setup");
   }, []);
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, type: "gear" | "audio") => {
+  const handleGearUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target?.result as string;
-      if (type === "gear") setGearImage(b64);
-      else setAudioSample(b64);
-    };
+    reader.onload = (ev) => setGearImage(ev.target?.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleAudioFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAudioAnalysing(true);
+    setAudioError(null);
+    setAudioAnalysis(null);
+    try {
+      const result = await analyzeAudio(file);
+      setAudioAnalysis(result);
+      setAudioLabel(file.name);
+    } catch (err) {
+      setAudioError(err instanceof Error ? err.message : "Audio analysis failed.");
+    } finally {
+      setAudioAnalysing(false);
+    }
+  };
+
+  const handleYoutubeAnalyse = async () => {
+    const url = youtubeUrl.trim();
+    if (!url) return;
+    setAudioAnalysing(true);
+    setAudioError(null);
+    setAudioAnalysis(null);
+    try {
+      const result = await analyzeYoutubeAudio(url);
+      setAudioAnalysis(result);
+      setAudioLabel("YouTube reference");
+    } catch (err) {
+      setAudioError(err instanceof Error ? err.message : "YouTube download failed.");
+    } finally {
+      setAudioAnalysing(false);
+    }
+  };
+
+  const clearAudio = () => {
+    setAudioAnalysis(null);
+    setAudioLabel(null);
+    setYoutubeUrl("");
+    setAudioError(null);
   };
 
   const handleSubmit = async () => {
@@ -76,9 +124,8 @@ export default function App() {
         guitarType: guitar,
         hasExtraPedals: hasPedals,
         pedalboardImage: gearImage || undefined,
-        audioSample: audioSample || undefined,
       };
-      const result = await analyzeTone(request, device);
+      const result = await analyzeTone(request, device, audioAnalysis ?? undefined);
       setPreset(result);
       setShowFeedback(true);
     } catch (err) {
@@ -94,7 +141,7 @@ export default function App() {
     setGuitar("");
     setHasPedals(false);
     setGearImage(null);
-    setAudioSample(null);
+    clearAudio();
     setError(null);
   };
 
@@ -255,26 +302,86 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">Reference Uploads</label>
-                      <div className="flex gap-2">
-                        <label className="flex-1 cursor-pointer">
-                          <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, "gear")} className="hidden" />
-                          <div className={`h-11 border rounded-sm flex items-center justify-center gap-2 transition-all ${gearImage ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-white/30 hover:border-white/20"}`}>
-                            {gearImage
-                              ? <img src={gearImage} className="w-5 h-5 object-cover rounded-sm grayscale" />
-                              : <Music className="w-4 h-4" />}
-                            <span className="text-[9px] font-mono tracking-widest uppercase">{gearImage ? "GEAR" : "UPLOAD GEAR"}</span>
-                          </div>
-                        </label>
-                        <label className="flex-1 cursor-pointer">
-                          <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, "audio")} className="hidden" />
-                          <div className={`h-11 border rounded-sm flex items-center justify-center gap-2 transition-all ${audioSample ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-white/30 hover:border-white/20"}`}>
-                            <FileAudio className="w-4 h-4" />
-                            <span className="text-[9px] font-mono tracking-widest uppercase">{audioSample ? "AUDIO" : "UPLOAD AUDIO"}</span>
-                          </div>
-                        </label>
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">Gear Photo</label>
+                      <label className="cursor-pointer block">
+                        <input type="file" accept="image/*" onChange={handleGearUpload} className="hidden" />
+                        <div className={`h-11 border rounded-sm flex items-center justify-center gap-2 transition-all ${gearImage ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-white/30 hover:border-white/20"}`}>
+                          {gearImage
+                            ? <img src={gearImage} className="w-5 h-5 object-cover rounded-sm grayscale" />
+                            : <Music className="w-4 h-4" />}
+                          <span className="text-[9px] font-mono tracking-widest uppercase">{gearImage ? "GEAR LOADED" : "UPLOAD GEAR"}</span>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Audio Reference Panel */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] uppercase tracking-[0.2em] text-white/30">Audio Reference</label>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setAudioMode("file"); clearAudio(); }}
+                          className={`px-2 py-1 text-[9px] font-mono tracking-widest transition-colors rounded-sm ${audioMode === "file" ? "bg-blue-500/20 text-blue-400" : "text-white/20 hover:text-white/40"}`}
+                        >FILE</button>
+                        <button
+                          onClick={() => { setAudioMode("youtube"); clearAudio(); }}
+                          className={`px-2 py-1 text-[9px] font-mono tracking-widest transition-colors rounded-sm ${audioMode === "youtube" ? "bg-blue-500/20 text-blue-400" : "text-white/20 hover:text-white/40"}`}
+                        >YOUTUBE</button>
                       </div>
                     </div>
+
+                    {audioAnalysis ? (
+                      <div className="border border-blue-500/40 bg-blue-500/5 rounded-sm p-3 flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-2 min-w-0">
+                          <CheckCircle2 className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                          <div className="min-w-0">
+                            <p className="text-[9px] font-mono text-blue-400 uppercase tracking-widest truncate">{audioLabel}</p>
+                            <p className="text-[9px] text-white/30 mt-1 leading-relaxed">{audioAnalysis.description}</p>
+                          </div>
+                        </div>
+                        <button onClick={clearAudio} className="text-white/20 hover:text-white/60 flex-shrink-0">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : audioAnalysing ? (
+                      <div className="h-11 border border-white/10 rounded-sm flex items-center justify-center gap-2 text-white/30">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-[9px] font-mono tracking-widest uppercase">
+                          {audioMode === "youtube" ? "Downloading + Analysing…" : "Analysing…"}
+                        </span>
+                      </div>
+                    ) : audioMode === "file" ? (
+                      <label className="cursor-pointer block">
+                        <input type="file" accept="audio/*" onChange={handleAudioFileUpload} className="hidden" />
+                        <div className="h-11 border border-white/10 bg-white/5 rounded-sm flex items-center justify-center gap-2 text-white/30 hover:border-white/20 transition-all">
+                          <FileAudio className="w-4 h-4" />
+                          <span className="text-[9px] font-mono tracking-widest uppercase">Upload Audio File</span>
+                        </div>
+                      </label>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={youtubeUrl}
+                          onChange={(e) => setYoutubeUrl(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleYoutubeAnalyse()}
+                          placeholder="https://youtube.com/watch?v=..."
+                          className="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 h-11 text-[11px] font-mono focus:border-blue-500 outline-none transition-all placeholder:text-white/10"
+                        />
+                        <button
+                          onClick={handleYoutubeAnalyse}
+                          disabled={!youtubeUrl.trim()}
+                          className="h-11 px-4 bg-white/5 border border-white/10 hover:border-blue-500 hover:text-blue-400 text-white/30 transition-all disabled:opacity-30 rounded-sm"
+                        >
+                          <Youtube className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {audioError && (
+                      <p className="text-[9px] text-red-400 font-mono">{audioError}</p>
+                    )}
                   </div>
 
                   <div className="space-y-4">

@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, dialog, safeStorage, Menu, shell } = requir
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
+const { spawn } = require('child_process');
+const os = require('os');
+const crypto = require('crypto');
 
 // ─── Beta expiry ──────────────────────────────────────────────────────────────
 
@@ -564,11 +567,92 @@ ipcMain.handle('generate-preset', async (_e, { system, prompt, temperature, maxT
   }
 });
 
+// ─── Bundled binary paths ─────────────────────────────────────────────────────
+
+function getBinPath(name) {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'bin', name)
+    : path.join(__dirname, '..', 'resources', 'bin', name);
+}
+
+function getFfmpegPath() {
+  const raw = require('ffmpeg-static');
+  return app.isPackaged ? raw.replace('app.asar', 'app.asar.unpacked') : raw;
+}
+
+// ─── IPC: YouTube audio download ──────────────────────────────────────────────
+
+ipcMain.handle('download-youtube-audio', async (_e, url) => {
+  const ytdlp   = getBinPath('yt-dlp');
+  const ffmpeg  = getFfmpegPath();
+  const tmpFile = path.join(os.tmpdir(), `tone-analysis-${crypto.randomUUID()}.wav`);
+
+  if (!fs.existsSync(ytdlp)) {
+    throw new Error('yt-dlp binary not found. Please reinstall the app.');
+  }
+
+  await new Promise((resolve, reject) => {
+    const proc = spawn(ytdlp, [
+      '--extract-audio',
+      '--audio-format', 'wav',
+      '--audio-quality', '0',
+      '--ffmpeg-location', ffmpeg,
+      '--postprocessor-args', 'ffmpeg:-t 30 -ar 44100 -ac 1',
+      '-o', tmpFile.replace('.wav', '.%(ext)s'),
+      '--no-playlist',
+      url,
+    ]);
+
+    let stderr = '';
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`yt-dlp exited ${code}: ${stderr.slice(-300)}`));
+    });
+    proc.on('error', reject);
+  });
+
+  // yt-dlp may write .wav directly or as tmpFile without extension
+  const outPath = fs.existsSync(tmpFile) ? tmpFile : tmpFile.replace('.wav', '.wav');
+
+  if (!fs.existsSync(outPath)) {
+    throw new Error('Audio download succeeded but output file not found.');
+  }
+
+  try {
+    const buffer = fs.readFileSync(outPath);
+    return buffer; // IPC serialises Buffer → Uint8Array on renderer side
+  } finally {
+    try { fs.unlinkSync(outPath); } catch { /* ignore */ }
+  }
+});
+
 // ─── App lifecycle ────────────────────────────────────────────────────────────
+
+function checkArchitecture() {
+  if (os.arch() !== 'arm64') {
+    dialog.showMessageBoxSync({
+      type:    'error',
+      title:   'Unsupported Architecture',
+      message: 'Tone Architect requires Apple Silicon (M1 or later).',
+      detail:  [
+        'This app uses on-device AI inference with Apple Metal.',
+        '',
+        'Intel Macs are not supported — the AI model would run',
+        'at CPU-only speed (5–10× slower), making it unusable.',
+        '',
+        'Please run Tone Architect on an M1, M2, M3, or M4 Mac.',
+      ].join('\n'),
+      buttons: ['OK'],
+    });
+    app.quit();
+  }
+}
 
 let mainWindow;
 
 app.whenReady().then(() => {
+  checkArchitecture();      // exits immediately on Intel
   checkBetaExpiry();        // exits immediately if expired
   Menu.setApplicationMenu(buildMenu());
   mainWindow = createWindow();
