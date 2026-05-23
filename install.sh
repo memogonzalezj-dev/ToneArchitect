@@ -25,19 +25,31 @@ echo "  → Downloading Tone Architect v${VERSION}..."
 curl -L --progress-bar "$DOWNLOAD_URL" -o "$TMP_DMG"
 
 echo "  → Mounting disk image..."
-MOUNT_POINT=$(hdiutil attach "$TMP_DMG" -nobrowse -quiet | awk 'END{print $NF}')
+hdiutil attach "$TMP_DMG" -nobrowse -quiet
+
+echo "  → Finding app in mounted volume..."
+APP_PATH=$(find /Volumes -name "$APP_NAME" -maxdepth 3 2>/dev/null | head -1)
+
+if [[ -z "$APP_PATH" ]]; then
+  echo "  ✗ Could not find ${APP_NAME} in the mounted DMG."
+  hdiutil detach "/Volumes" -quiet 2>/dev/null || true
+  exit 1
+fi
+
+MOUNT_POINT=$(dirname "$APP_PATH")
+echo "  → Found at: ${APP_PATH}"
 
 echo "  → Installing to ${INSTALL_DIR}..."
 if [[ -d "${INSTALL_DIR}/${APP_NAME}" ]]; then
   rm -rf "${INSTALL_DIR}/${APP_NAME}"
 fi
-cp -R "${MOUNT_POINT}/${APP_NAME}" "${INSTALL_DIR}/"
+cp -R "$APP_PATH" "${INSTALL_DIR}/"
 
 echo "  → Removing macOS quarantine flag..."
 xattr -cr "${INSTALL_DIR}/${APP_NAME}"
 
 echo "  → Cleaning up..."
-hdiutil detach "$MOUNT_POINT" -quiet
+hdiutil detach "$MOUNT_POINT" -quiet 2>/dev/null || true
 rm -f "$TMP_DMG"
 
 echo ""
