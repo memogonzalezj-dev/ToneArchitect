@@ -15,8 +15,7 @@ function fft(re: Float64Array, im: Float64Array): void {
   }
   for (let len = 2; len <= n; len <<= 1) {
     const ang = (-2 * Math.PI) / len;
-    const wRe = Math.cos(ang);
-    const wIm = Math.sin(ang);
+    const wRe = Math.cos(ang), wIm = Math.sin(ang);
     for (let i = 0; i < n; i += len) {
       let curRe = 1, curIm = 0;
       for (let j = 0; j < len >> 1; j++) {
@@ -31,8 +30,6 @@ function fft(re: Float64Array, im: Float64Array): void {
   }
 }
 
-// ── Hann window ───────────────────────────────────────────────────────────────
-
 function applyHann(buf: Float32Array): Float64Array {
   const out = new Float64Array(buf.length);
   for (let i = 0; i < buf.length; i++) {
@@ -41,15 +38,13 @@ function applyHann(buf: Float32Array): Float64Array {
   return out;
 }
 
-// ── Spectral features from one FFT frame ─────────────────────────────────────
-
 interface SpectralFrame {
-  centroid:   number;  // normalised 0-1
-  bassRatio:  number;
-  midRatio:   number;
-  trebRatio:  number;
-  zcr:        number;  // zero-crossing rate 0-1
-  rms:        number;
+  centroid:  number;
+  bassRatio: number;
+  midRatio:  number;
+  trebRatio: number;
+  zcr:       number;
+  rms:       number;
 }
 
 function analyseFrame(samples: Float32Array, sampleRate: number): SpectralFrame {
@@ -60,8 +55,6 @@ function analyseFrame(samples: Float32Array, sampleRate: number): SpectralFrame 
 
   const halfN = N >> 1;
   const binHz = sampleRate / N;
-
-  // Magnitude spectrum
   const mag = new Float64Array(halfN);
   let totalPower = 0;
   for (let k = 1; k < halfN; k++) {
@@ -69,13 +62,11 @@ function analyseFrame(samples: Float32Array, sampleRate: number): SpectralFrame 
     totalPower += mag[k];
   }
 
-  // Spectral centroid
   let weightedSum = 0;
   for (let k = 1; k < halfN; k++) weightedSum += k * binHz * mag[k];
   const centroidHz = totalPower > 0 ? weightedSum / totalPower : 0;
   const centroid = Math.min(1, centroidHz / 8000);
 
-  // Band energy ratios (bass <300 Hz, mids 300-3k Hz, treble >3k Hz)
   let bass = 0, mids = 0, treb = 0;
   for (let k = 1; k < halfN; k++) {
     const hz = k * binHz;
@@ -85,113 +76,73 @@ function analyseFrame(samples: Float32Array, sampleRate: number): SpectralFrame 
   }
   const bandSum = bass + mids + treb || 1;
 
-  // Zero-crossing rate
   let zc = 0;
   for (let i = 1; i < N; i++) {
     if ((samples[i] >= 0) !== (samples[i - 1] >= 0)) zc++;
   }
-  const zcr = Math.min(1, zc / N / 0.5); // normalised: pure noise ≈ 0.5
+  const zcr = Math.min(1, zc / N / 0.5);
 
-  // RMS
   let sumSq = 0;
   for (let i = 0; i < N; i++) sumSq += samples[i] * samples[i];
   const rms = Math.sqrt(sumSq / N);
 
-  return {
-    centroid,
-    bassRatio: bass / bandSum,
-    midRatio:  mids / bandSum,
-    trebRatio: treb / bandSum,
-    zcr,
-    rms,
-  };
+  return { centroid, bassRatio: bass / bandSum, midRatio: mids / bandSum, trebRatio: treb / bandSum, zcr, rms };
 }
 
-// ── Envelope follower → reverb / delay detection ──────────────────────────────
-
 function envelopeFeatures(pcm: Float32Array, sampleRate: number) {
-  const hopSize = Math.floor(sampleRate * 0.02); // 20 ms hops
+  const hopSize = Math.floor(sampleRate * 0.02);
   const envelope: number[] = [];
   for (let i = 0; i < pcm.length - hopSize; i += hopSize) {
     let sumSq = 0;
     for (let j = 0; j < hopSize; j++) sumSq += pcm[i + j] ** 2;
     envelope.push(Math.sqrt(sumSq / hopSize));
   }
-
-  // Normalise envelope
   const peak = Math.max(...envelope, 1e-9);
   const norm = envelope.map((v) => v / peak);
-
-  // Reverb: look at the decay slope in the second half of the audio
   const tail = norm.slice(Math.floor(norm.length * 0.5));
   const tailMean = tail.reduce((a, b) => a + b, 0) / (tail.length || 1);
-  const reverb = Math.min(1, tailMean * 3); // slow decay = high reverb
-
-  // Delay: autocorrelation on envelope for periodic energy bumps
+  const reverb = Math.min(1, tailMean * 3);
   let delayPresent = false;
-  const maxLag = Math.min(150, Math.floor(norm.length / 2)); // up to 3 s
+  const maxLag = Math.min(150, Math.floor(norm.length / 2));
   for (let lag = 20; lag < maxLag; lag++) {
     let corr = 0;
     for (let i = 0; i < norm.length - lag; i++) corr += norm[i] * norm[i + lag];
     corr /= (norm.length - lag);
     if (corr > 0.15) { delayPresent = true; break; }
   }
-
   return { reverb, delayPresent };
 }
-
-// ── Dynamic range → compression estimate ──────────────────────────────────────
 
 function compressionEstimate(pcm: Float32Array): number {
   const abs = Array.from(pcm).map(Math.abs);
   const peak = Math.max(...abs, 1e-9);
   const rms  = Math.sqrt(abs.reduce((a, v) => a + v * v, 0) / abs.length);
-  // crest factor: low crest = high compression
   const crest = peak / (rms || 1e-9);
   return Math.max(0, Math.min(1, 1 - (crest - 1) / 15));
 }
 
-// ── Harmonic distortion proxy ─────────────────────────────────────────────────
-// Compare odd-harmonic energy vs even-harmonic energy in the spectral average.
-
 function saturationEstimate(frames: SpectralFrame[]): number {
-  const avgZcr = frames.reduce((a, f) => a + f.zcr, 0) / (frames.length || 1);
-  const avgCentroid = frames.reduce((a, f) => a + f.centroid, 0) / (frames.length || 1);
-  // High ZCR + high centroid = more harmonic content / saturation
-  return Math.min(1, (avgZcr * 0.6 + avgCentroid * 0.4));
+  const avgZcr      = frames.reduce((a, f) => a + f.zcr,      0) / (frames.length || 1);
+  const avgCentroid = frames.reduce((a, f) => a + f.centroid,  0) / (frames.length || 1);
+  return Math.min(1, avgZcr * 0.6 + avgCentroid * 0.4);
 }
-
-// ── Text descriptor ───────────────────────────────────────────────────────────
 
 function buildDescription(a: Omit<AudioAnalysis, "description">): string {
   const parts: string[] = [];
-
-  // Gain/distortion
-  if (a.distortion > 0.65)      parts.push("heavily saturated / high-gain tone");
+  if      (a.distortion > 0.65) parts.push("heavily saturated / high-gain tone");
   else if (a.distortion > 0.4)  parts.push("moderate overdrive / crunch");
   else                          parts.push("clean or lightly driven tone");
-
-  // Tonal balance
-  if (a.brightness > 0.65)      parts.push("bright and trebly character");
+  if      (a.brightness > 0.65) parts.push("bright and trebly character");
   else if (a.brightness < 0.3)  parts.push("dark / warm character");
   else                          parts.push("balanced mid-range character");
-
   if (a.bass > 0.45)            parts.push("prominent low end");
   if (a.treble > 0.35)          parts.push("elevated high-frequency content");
-
-  // Compression
-  if (a.compression > 0.65)     parts.push("heavily compressed / sustained");
+  if      (a.compression > 0.65) parts.push("heavily compressed / sustained");
   else if (a.compression > 0.35) parts.push("moderately compressed");
-
-  // Time-based FX
-  if (a.reverb > 0.55)          parts.push("significant reverb / ambience");
+  if      (a.reverb > 0.55)     parts.push("significant reverb / ambience");
   else if (a.reverb > 0.25)     parts.push("light reverb");
-
   if (a.delayPresent)           parts.push("delay / echo present");
-
-  // Saturation
   if (a.saturation > 0.6)       parts.push("rich harmonic distortion");
-
   return parts.join(", ") + ".";
 }
 
@@ -199,29 +150,19 @@ function buildDescription(a: Omit<AudioAnalysis, "description">): string {
 
 export async function analyzeAudio(source: File | ArrayBuffer): Promise<AudioAnalysis> {
   const ctx = new AudioContext();
-
-  let arrayBuffer: ArrayBuffer;
-  if (source instanceof File) {
-    arrayBuffer = await source.arrayBuffer();
-  } else {
-    arrayBuffer = source;
-  }
-
+  const arrayBuffer = source instanceof File ? await source.arrayBuffer() : source;
   const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
   await ctx.close();
 
-  const pcm = audioBuffer.getChannelData(0); // mono / left channel
+  const pcm = audioBuffer.getChannelData(0);
   const sr  = audioBuffer.sampleRate;
 
-  // Frame analysis (4096-sample windows, 50 % overlap)
   const frameSize = 4096;
   const hop = frameSize >> 1;
   const frames: SpectralFrame[] = [];
-
   for (let start = 0; start + frameSize < pcm.length; start += hop) {
     frames.push(analyseFrame(pcm.slice(start, start + frameSize), sr));
   }
-
   if (frames.length === 0) throw new Error("Audio file too short to analyse.");
 
   const avg = (key: keyof SpectralFrame) =>
@@ -237,9 +178,7 @@ export async function analyzeAudio(source: File | ArrayBuffer): Promise<AudioAna
   const { reverb, delayPresent } = envelopeFeatures(pcm, sr);
 
   const partial = { distortion, brightness, bass, mids, treble, reverb, delayPresent, compression, saturation };
-  const description = buildDescription(partial);
-
-  return { ...partial, description };
+  return { ...partial, description: buildDescription(partial) };
 }
 
 export async function analyzeYoutubeAudio(url: string): Promise<AudioAnalysis> {

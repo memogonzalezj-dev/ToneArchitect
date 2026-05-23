@@ -42,12 +42,11 @@ export default function App() {
   const [gearImage, setGearImage] = useState<string | null>(null);
 
   // Audio reference state
-  const [audioAnalysis, setAudioAnalysis]     = useState<AudioAnalysis | null>(null);
-  const [audioLabel, setAudioLabel]           = useState<string | null>(null);
-  const [audioMode, setAudioMode]             = useState<"file" | "youtube">("file");
-  const [youtubeUrl, setYoutubeUrl]           = useState("");
-  const [audioAnalysing, setAudioAnalysing]   = useState(false);
-  const [audioError, setAudioError]           = useState<string | null>(null);
+  const [audioAnalysis, setAudioAnalysis]   = useState<AudioAnalysis | null>(null);
+  const [audioLabel, setAudioLabel]         = useState<string | null>(null);
+  const [audioAnalysing, setAudioAnalysing] = useState(false);
+  const [audioError, setAudioError]         = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrl]         = useState("");
 
   // Close device dropdown on outside click
   useEffect(() => {
@@ -61,9 +60,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Llama model check is done inside LlamaSetup — just go straight to setup screen
     setView("setup");
   }, []);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleGearUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -110,8 +110,8 @@ export default function App() {
   const clearAudio = () => {
     setAudioAnalysis(null);
     setAudioLabel(null);
-    setYoutubeUrl("");
     setAudioError(null);
+    setYoutubeUrl("");
   };
 
   const handleSubmit = async () => {
@@ -149,6 +149,8 @@ export default function App() {
     reset();
     setView("setup");
   };
+
+  // ── Views ────────────────────────────────────────────────────────────────────
 
   if (view === "checking") {
     return (
@@ -280,6 +282,8 @@ export default function App() {
 
               <div className="bg-white/5 border border-white/10 p-1 rounded-sm shadow-2xl">
                 <div className="bg-[#0D0E12] p-8 space-y-8">
+
+                  {/* Sonic Reference */}
                   <div className="space-y-3">
                     <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">Sonic Reference</label>
                     <textarea
@@ -290,6 +294,7 @@ export default function App() {
                     />
                   </div>
 
+                  {/* Hardware Profile + Gear Photo */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
                       <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">Hardware Profile</label>
@@ -309,73 +314,74 @@ export default function App() {
                           {gearImage
                             ? <img src={gearImage} className="w-5 h-5 object-cover rounded-sm grayscale" />
                             : <Music className="w-4 h-4" />}
-                          <span className="text-[9px] font-mono tracking-widest uppercase">{gearImage ? "GEAR LOADED" : "UPLOAD GEAR"}</span>
+                          <span className="text-[9px] font-mono tracking-widest uppercase">
+                            {gearImage ? "Gear loaded" : "Upload gear photo"}
+                          </span>
                         </div>
                       </label>
                     </div>
                   </div>
 
-                  {/* Audio Reference Panel */}
+                  {/* Audio Reference */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase tracking-[0.2em] text-white/30">Audio Reference</label>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => { setAudioMode("file"); clearAudio(); }}
-                          className={`px-2 py-1 text-[9px] font-mono tracking-widest transition-colors rounded-sm ${audioMode === "file" ? "bg-blue-500/20 text-blue-400" : "text-white/20 hover:text-white/40"}`}
-                        >FILE</button>
-                        <button
-                          onClick={() => { setAudioMode("youtube"); clearAudio(); }}
-                          className={`px-2 py-1 text-[9px] font-mono tracking-widest transition-colors rounded-sm ${audioMode === "youtube" ? "bg-blue-500/20 text-blue-400" : "text-white/20 hover:text-white/40"}`}
-                        >YOUTUBE</button>
-                      </div>
-                    </div>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">
+                      Audio Reference <span className="text-white/20 normal-case tracking-normal">— optional, improves tone matching</span>
+                    </label>
 
+                    {/* Result badge */}
                     {audioAnalysis ? (
                       <div className="border border-blue-500/40 bg-blue-500/5 rounded-sm p-3 flex items-start justify-between gap-3">
                         <div className="flex items-start gap-2 min-w-0">
                           <CheckCircle2 className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                           <div className="min-w-0">
                             <p className="text-[9px] font-mono text-blue-400 uppercase tracking-widest truncate">{audioLabel}</p>
-                            <p className="text-[9px] text-white/30 mt-1 leading-relaxed">{audioAnalysis.description}</p>
+                            <p className="text-[9px] text-white/40 mt-1 leading-relaxed">{audioAnalysis.description}</p>
                           </div>
                         </div>
-                        <button onClick={clearAudio} className="text-white/20 hover:text-white/60 flex-shrink-0">
+                        <button onClick={clearAudio} className="text-white/20 hover:text-white/60 transition-colors flex-shrink-0 mt-0.5">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
+
                     ) : audioAnalysing ? (
-                      <div className="h-11 border border-white/10 rounded-sm flex items-center justify-center gap-2 text-white/30">
+                      <div className="h-12 border border-white/10 rounded-sm flex items-center justify-center gap-2 text-white/30">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-[9px] font-mono tracking-widest uppercase">
-                          {audioMode === "youtube" ? "Downloading + Analysing…" : "Analysing…"}
-                        </span>
+                        <span className="text-[9px] font-mono tracking-widest uppercase">Analysing audio…</span>
                       </div>
-                    ) : audioMode === "file" ? (
-                      <label className="cursor-pointer block">
-                        <input type="file" accept="audio/*" onChange={handleAudioFileUpload} className="hidden" />
-                        <div className="h-11 border border-white/10 bg-white/5 rounded-sm flex items-center justify-center gap-2 text-white/30 hover:border-white/20 transition-all">
-                          <FileAudio className="w-4 h-4" />
-                          <span className="text-[9px] font-mono tracking-widest uppercase">Upload Audio File</span>
-                        </div>
-                      </label>
+
                     ) : (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={youtubeUrl}
-                          onChange={(e) => setYoutubeUrl(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleYoutubeAnalyse()}
-                          placeholder="https://youtube.com/watch?v=..."
-                          className="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 h-11 text-[11px] font-mono focus:border-blue-500 outline-none transition-all placeholder:text-white/10"
-                        />
-                        <button
-                          onClick={handleYoutubeAnalyse}
-                          disabled={!youtubeUrl.trim()}
-                          className="h-11 px-4 bg-white/5 border border-white/10 hover:border-blue-500 hover:text-blue-400 text-white/30 transition-all disabled:opacity-30 rounded-sm"
-                        >
-                          <Youtube className="w-4 h-4" />
-                        </button>
+                      /* File upload + YouTube URL — always both visible */
+                      <div className="flex items-center gap-3">
+                        {/* Local file */}
+                        <label className="flex-1 cursor-pointer">
+                          <input type="file" accept="audio/*" onChange={handleAudioFileUpload} className="hidden" />
+                          <div className="h-11 border border-white/10 bg-white/5 rounded-sm flex items-center justify-center gap-2 text-white/30 hover:border-blue-500/50 hover:text-white/60 transition-all">
+                            <FileAudio className="w-4 h-4" />
+                            <span className="text-[9px] font-mono tracking-widest uppercase">Upload file</span>
+                          </div>
+                        </label>
+
+                        <span className="text-[9px] text-white/20 font-mono flex-shrink-0">or</span>
+
+                        {/* YouTube URL */}
+                        <div className="flex-[2] flex gap-2">
+                          <input
+                            type="text"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleYoutubeAnalyse()}
+                            placeholder="Paste YouTube URL…"
+                            className="flex-1 bg-white/5 border border-white/10 rounded-sm px-3 h-11 text-[11px] font-mono focus:border-blue-500 outline-none transition-all placeholder:text-white/20"
+                          />
+                          <button
+                            onClick={handleYoutubeAnalyse}
+                            disabled={!youtubeUrl.trim()}
+                            title="Analyse YouTube audio"
+                            className="h-11 w-11 flex items-center justify-center border border-white/10 bg-white/5 rounded-sm text-white/30 hover:border-blue-500/50 hover:text-blue-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                          >
+                            <Youtube className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -384,6 +390,7 @@ export default function App() {
                     )}
                   </div>
 
+                  {/* Controls */}
                   <div className="space-y-4">
                     <button
                       onClick={() => setHasPedals(!hasPedals)}
@@ -577,7 +584,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-white/10 px-8 py-5 flex items-center justify-between bg-black text-[9px] uppercase tracking-[0.25em] text-white/20">
-        <div>Tone Architect v1.0.0 • Not affiliated with Line 6, Inc.</div>
+        <div>Tone Architect v1.1.0 • Not affiliated with Line 6, Inc.</div>
         <div>© 2026 MEMO GONZALEZ • Compatible with Line 6 {device.label}</div>
       </footer>
 
