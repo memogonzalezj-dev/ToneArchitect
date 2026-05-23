@@ -123,12 +123,24 @@ Files that must be updated on every version bump:
 ## Changelog
 
 ### v1.0.1 — Beta (2026-05-23)
-- ⭐ Beta feedback panel — star rating + optional comment after each generation
-- 🔒 Training-data consent screen on first launch (opt-in, stored locally)
-- 🛠 DSP block hard cap — presets are now enforced at the device block limit in code, not just the prompt
-- 🤖 Fixed node-llama-cpp v3 API (dynamic import, `LlamaChatSession`, context disposal)
-- 📥 Fixed model download — now uses the built-in HuggingFace downloader (no more corrupt files or 401 errors)
-- 📡 Fixed feedback submission — POST now follows Google Apps Script redirects correctly
+
+#### What's New for Users
+
+**⭐ Rate your presets**
+After each preset is generated, a feedback panel appears in the bottom-right corner. Give it 1–5 stars and leave an optional comment about what was off — too much gain, wrong cab, missing chorus, etc. Your feedback goes directly to the developer and helps improve future versions.
+
+**🔒 Privacy consent**
+On first launch after updating, you'll see a one-time screen asking if you'd like to share your tone queries and ratings to help improve the AI. You can say yes or no — and change your mind any time by tapping the shield icon at the bottom of the feedback panel. No personal data, no IP address, no identifiers are ever collected.
+
+**🛠 DSP block limit fixed**
+In some cases the AI was generating one too many blocks (e.g. 7 blocks for the HX Stomp's 6-block limit). This is now enforced in code — presets will always respect your device's exact block count, no matter what the AI outputs.
+
+#### Under the Hood
+- AI model initialization completely rewritten for `node-llama-cpp` v3
+- Model download now uses the official HuggingFace downloader — no more corrupt files or failed downloads
+- Feedback submission fixed to correctly reach Google Sheets
+
+---
 
 ### v1.0.0 — Beta (2026-05-01)
 - Initial beta release
