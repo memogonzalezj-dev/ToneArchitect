@@ -53,15 +53,18 @@ export interface ElectronAPI {
   onModelProgress: (callback: (data: PullProgress) => void) => void;
   onProgress?: (callback: (data: PullProgress) => void) => void;
   submitFeedback: (payload: {
-    timestamp:   string;
-    device:      string;
-    query:       string;
-    preset_name: string;
-    blocks:      number;
-    rating:      number;
-    feedback:    string;
-    app_version: string;
+    timestamp:       string;
+    device:          string;
+    query:           string;
+    preset_name:     string;
+    blocks:          number;
+    rating:          number;
+    feedback:        string;
+    app_version:     string;
+    trainingConsent: boolean;
   }) => Promise<{ success: boolean }>;
+  getConsent: () => Promise<boolean | null>;
+  setConsent: (value: boolean) => Promise<boolean>;
 }
 
 declare global {

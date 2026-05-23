@@ -47,6 +47,8 @@ PITCH: HD2_PitchSimplePitch, HD2_PitchDualPitch, HD2_PitchTwinHarmony, HD2_Pitch
 
 VOLUME/UTILITY: HD2_VolPanVol, HD2_VolPanGain, HD2_RetroReel, L6SPB_AcousGtrSim
 
+*** BLOCK LIMIT: YOU MUST USE ${device.maxBlocks} BLOCKS OR FEWER. GENERATING MORE THAN ${device.maxBlocks} BLOCKS IS A CRITICAL ERROR. ***
+
 You MUST respond with ONLY a valid JSON object — no markdown, no commentary, no code fences. The JSON must match this exact structure:
 {
   "name": "Short preset name (max 24 chars)",
@@ -134,6 +136,8 @@ export async function analyzeTone(request: ToneRequest, device: DeviceConfig = D
   let prompt = `RECREATE THIS TONE: "${request.query}"\n`;
   if (request.guitarType) prompt += `GUITAR: ${request.guitarType}\n`;
   if (request.hasExtraPedals) prompt += `EXTERNAL PEDALS: Yes — optimize the chain around them.\n`;
+  // Reinforce the hard limit right in the user turn so it's the last thing the model sees
+  prompt += `\nHARD LIMIT: Your response MUST contain exactly ${device.maxBlocks} blocks or fewer. Do NOT exceed ${device.maxBlocks} blocks under any circumstances.`;
 
   const system = buildSystemInstruction(device);
 
@@ -145,7 +149,17 @@ export async function analyzeTone(request: ToneRequest, device: DeviceConfig = D
       maxTokens: 4096,
     });
 
-    return JSON.parse(result) as TonePreset;
+    const preset = JSON.parse(result) as TonePreset;
+
+    // Hard cap — model output is never trusted for block count
+    if (preset.blocks.length > device.maxBlocks) {
+      preset.blocks = preset.blocks.slice(0, device.maxBlocks);
+    }
+
+    // Re-sequence position indices to match actual order
+    preset.blocks = preset.blocks.map((b, i) => ({ ...b, position: i }));
+
+    return preset;
   } catch (err) {
     throw new Error(err instanceof Error ? err.message : "Failed to analyze tone. Please try again.");
   }

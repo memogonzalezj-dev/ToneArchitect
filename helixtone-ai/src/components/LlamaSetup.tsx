@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Cpu, Download, CheckCircle2, AlertCircle, RefreshCw, HardDrive, MemoryStick, Zap } from "lucide-react";
+import { Cpu, Download, CheckCircle2, AlertCircle, RefreshCw, HardDrive, MemoryStick, ShieldCheck } from "lucide-react";
 import {
   checkLlamaRunning,
   checkModelAvailable,
@@ -8,7 +8,7 @@ import {
   PullProgress,
 } from "../services/llamaService";
 
-type Step = "checking" | "need_model" | "pulling" | "ready";
+type Step = "checking" | "need_model" | "pulling" | "ready" | "consent";
 
 interface Props {
   onReady: () => void;
@@ -20,20 +20,30 @@ export default function LlamaSetup({ onReady }: Props) {
   const [pullError, setPullError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
+  const proceedAfterReady = useCallback(async () => {
+    // If consent was never asked, show consent step first
+    const consent = await window.electronAPI.getConsent();
+    if (consent === null) {
+      setStep("consent");
+    } else {
+      setStep("ready");
+      setTimeout(onReady, 600);
+    }
+  }, [onReady]);
+
   const check = useCallback(async () => {
     setChecking(true);
     const hasModel = await checkModelAvailable();
     if (!hasModel) { setStep("need_model"); setChecking(false); return; }
     const ready = await checkLlamaRunning();
     if (ready) {
-      setStep("ready");
       setChecking(false);
-      setTimeout(onReady, 600);
+      await proceedAfterReady();
     } else {
       setStep("need_model");
       setChecking(false);
     }
-  }, [onReady]);
+  }, [proceedAfterReady]);
 
   useEffect(() => { check(); }, [check]);
 
@@ -45,13 +55,19 @@ export default function LlamaSetup({ onReady }: Props) {
       await pullModel((p) => {
         setPull(p);
         if (p.done) {
-          setTimeout(onReady, 800);
+          setTimeout(() => proceedAfterReady(), 800);
         }
       });
     } catch (e) {
       setPullError(e instanceof Error ? e.message : "Download failed. Check your internet connection.");
       setStep("need_model");
     }
+  };
+
+  const handleConsent = async (value: boolean) => {
+    await window.electronAPI.setConsent(value);
+    setStep("ready");
+    setTimeout(onReady, 600);
   };
 
   return (
@@ -166,6 +182,52 @@ export default function LlamaSetup({ onReady }: Props) {
                     This is a one-time download. Close and reopen the app any time —
                     it will resume automatically.
                   </p>
+                </motion.div>
+              )}
+
+              {/* Consent */}
+              {step === "consent" && (
+                <motion.div key="consent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="space-y-6">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-white">Help improve Tone Architect</p>
+                      <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+                        Allow Tone Architect to collect your tone queries and ratings to improve the AI model.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/[0.03] border border-white/10 rounded-sm p-4 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest text-white/30 font-mono">What is collected</p>
+                    <ul className="space-y-1">
+                      {[`Your tone queries (e.g. "Pink Floyd solo tone")`, "Star ratings you submit", "Device type and block count"].map(item => (
+                        <li key={item} className="flex items-center gap-2 text-[11px] text-white/50">
+                          <span className="w-1 h-1 rounded-full bg-blue-400 flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-[10px] text-white/25 mt-3 leading-relaxed">
+                      No personal data, no IP address, no device identifiers. You can change this any time from the app menu.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleConsent(true)}
+                      className="flex-1 h-11 bg-blue-500 hover:bg-blue-400 text-white font-bold text-[10px] tracking-[0.3em] transition-colors"
+                    >
+                      YES, I'M IN
+                    </button>
+                    <button
+                      onClick={() => handleConsent(false)}
+                      className="flex-1 h-11 border border-white/20 text-white/50 hover:text-white hover:border-white/40 text-[10px] font-mono tracking-widest transition-colors"
+                    >
+                      NO THANKS
+                    </button>
+                  </div>
                 </motion.div>
               )}
 

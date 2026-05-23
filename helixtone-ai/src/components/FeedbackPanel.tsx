@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Star, Send, CheckCircle2, X } from "lucide-react";
+import { Star, Send, CheckCircle2, X, ShieldCheck } from "lucide-react";
 import { TonePreset } from "../types";
 import { DeviceConfig } from "../config/devices";
 
@@ -16,20 +16,26 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
   const [hover,     setHover]     = useState(0);
   const [feedback,  setFeedback]  = useState("");
   const [status,    setStatus]    = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [consent,   setConsent]   = useState<boolean | null>(null);
+
+  useEffect(() => {
+    window.electronAPI.getConsent().then(setConsent);
+  }, []);
 
   const submit = async () => {
     if (rating === 0) return;
     setStatus("sending");
 
     const payload = {
-      timestamp:   new Date().toISOString(),
-      device:      device.label,
+      timestamp:       new Date().toISOString(),
+      device:          device.label,
       query,
-      preset_name: preset.name,
-      blocks:      preset.blocks.length,
+      preset_name:     preset.name,
+      blocks:          preset.blocks.length,
       rating,
-      feedback:    feedback.trim(),
-      app_version: "1.0.1-beta",
+      feedback:        feedback.trim(),
+      app_version:     "1.0.1-beta",
+      trainingConsent: consent === true,
     };
 
     try {
@@ -143,10 +149,21 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
               )}
             </button>
 
-            <p className="text-[9px] text-white/15 text-center leading-relaxed">
-              Sends: tone query, preset name, block count, rating.
-              No personal data. Used only to improve the AI.
-            </p>
+            <button
+              onClick={async () => {
+                const next = !(consent === true);
+                await window.electronAPI.setConsent(next);
+                setConsent(next);
+              }}
+              className="w-full flex items-center gap-2 text-[9px] text-white/20 hover:text-white/40 transition-colors group"
+            >
+              <ShieldCheck className={`w-3 h-3 flex-shrink-0 ${consent === true ? "text-blue-400" : "text-white/20"}`} />
+              <span className="text-left leading-relaxed">
+                {consent === true
+                  ? "Sharing query & rating to improve the AI — tap to opt out"
+                  : "Not sharing training data — tap to opt in"}
+              </span>
+            </button>
 
           </motion.div>
         )}

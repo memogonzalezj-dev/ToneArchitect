@@ -20,4 +20,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generatePreset:   (config)      => ipcRenderer.invoke('generate-preset', config),
   onModelProgress:  (callback)    => { progressCallback = callback; },
   submitFeedback:   (payload)     => ipcRenderer.invoke('submit-feedback', payload),
+  getConsent:       ()            => ipcRenderer.invoke('get-consent'),
+  setConsent:       (value)       => ipcRenderer.invoke('set-consent', value),
 });
