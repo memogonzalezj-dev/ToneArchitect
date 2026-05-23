@@ -62,6 +62,7 @@ export interface ElectronAPI {
     feedback:        string;
     app_version:     string;
     trainingConsent: boolean;
+    preset_json:     string;
   }) => Promise<{ success: boolean }>;
   getConsent: () => Promise<boolean | null>;
   setConsent: (value: boolean) => Promise<boolean>;

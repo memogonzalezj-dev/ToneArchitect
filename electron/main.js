@@ -190,7 +190,7 @@ TIPS
 
 ABOUT
 ─────
-Tone Architect v1.0.1
+Tone Architect v1.0.2
 © 2026 Memo Gonzalez
 
 This software is not affiliated with, endorsed by, or sponsored by Line 6, Inc.
@@ -228,7 +228,7 @@ function buildMenu() {
               title: 'About Tone Architect',
               message: 'Tone Architect',
               detail: [
-                'Version 1.0.1',
+                'Version 1.0.2',
                 'Created by Memo Gonzalez',
                 '© 2026 Memo Gonzalez',
                 '',
