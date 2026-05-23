@@ -435,7 +435,7 @@ ipcMain.handle('save-helix-preset', async (_e, { filename, content }) => {
 // ─── IPC: Beta feedback ───────────────────────────────────────────────────────
 // Paste your Google Apps Script Web App URL here after deploying it.
 // Leave empty to silently skip submission during local development.
-const FEEDBACK_ENDPOINT = ""; // ← paste your Apps Script URL here
+const FEEDBACK_ENDPOINT = "https://script.google.com/macros/s/AKfycbwhaQV805K3R3kw5uIvuKpwFg8kV8hvBCFh9tWBQ-4KAdlFJc9Cy-RjQeOtarz8_CU/exec";
 
 ipcMain.handle('submit-feedback', async (_e, payload) => {
   if (!FEEDBACK_ENDPOINT) return { success: false, reason: "no endpoint configured" };
