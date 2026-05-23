@@ -122,6 +122,10 @@ Files that must be updated on every version bump:
 
 ## Changelog
 
+### v1.0.2 - Beta (2026-05-23)
+
+Added JSON collection for tunning local LLM
+
 ### v1.0.1 — Beta (2026-05-23)
 
 #### What's New for Users
