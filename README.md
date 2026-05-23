@@ -100,6 +100,44 @@ The signed DMG will appear in `dist_desktop/`.
 
 ---
 
+## Versioning
+
+Tone Architect uses a three-part version number: `MAJOR.MINOR.PATCH`
+
+| Increment | Example | When |
+|---|---|---|
+| **Patch** | `1.0.1` → `1.0.2` | Bug fixes, small features, each dev session |
+| **Minor** | `1.0.2` → `1.1.0` | Significant features, major review, new device support |
+| **Major** | `1.1.0` → `2.0.0` | Public launch, breaking changes, architecture rewrite |
+
+Files that must be updated on every version bump:
+
+| File | Field |
+|---|---|
+| `package.json` | `"version"` |
+| `electron/main.js` | About dialog string + `USER_GUIDE` header |
+| `helixtone-ai/src/components/FeedbackPanel.tsx` | `app_version` field in feedback payload |
+
+---
+
+## Changelog
+
+### v1.0.1 — Beta (2026-05-23)
+- ⭐ Beta feedback panel — star rating + optional comment after each generation
+- 🔒 Training-data consent screen on first launch (opt-in, stored locally)
+- 🛠 DSP block hard cap — presets are now enforced at the device block limit in code, not just the prompt
+- 🤖 Fixed node-llama-cpp v3 API (dynamic import, `LlamaChatSession`, context disposal)
+- 📥 Fixed model download — now uses the built-in HuggingFace downloader (no more corrupt files or 401 errors)
+- 📡 Fixed feedback submission — POST now follows Google Apps Script redirects correctly
+
+### v1.0.0 — Beta (2026-05-01)
+- Initial beta release
+- HX Stomp and HX Effects support
+- Local Llama 3.1 8B inference via Apple Metal
+- `.hlx` preset export compatible with HX Edit 3.7+
+
+---
+
 ## Project Structure
 
 ```
@@ -113,7 +151,8 @@ ToneArchitect/
 │       ├── config/
 │       │   └── devices.ts             # Device registry (block limits, IDs, I/O models)
 │       ├── components/
-│       │   └── LlamaSetup.tsx         # First-launch model download screen
+│       │   ├── LlamaSetup.tsx         # First-launch model download + consent screen
+│       │   └── FeedbackPanel.tsx      # Star rating + feedback submission panel
 │       └── services/
 │           ├── llamaService.ts        # Device-aware AI prompt builder + IPC
 │           └── helixService.ts        # HLX file generator + parameter sanitizer
