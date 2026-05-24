@@ -122,6 +122,32 @@ Files that must be updated on every version bump:
 
 ## Changelog
 
+### v1.1.0 — Beta (2026-05-24)
+
+#### What's new in v1.1.0
+
+**🎵 Audio Reference**
+Upload any audio file or paste a YouTube URL — Tone Architect analyses the tone (distortion, brightness, bass/mids/treble, compression, reverb, delay) and injects the measurements directly into the AI prompt so the generated preset matches the reference sound.
+
+**🔘 Make the Tone**
+The main button now activates as soon as an audio analysis is ready — no text description required. Just drop a reference track and hit Make the Tone.
+
+**🛠 Under the hood**
+- arm64 Apple Silicon only (startup guard shows a clean error on Intel Macs)
+- Bundled `yt-dlp` + `ffmpeg` — nothing extra to install
+- Radix-2 FFT signal processor running entirely client-side via Web Audio API
+- `install.sh` auto-detects the latest release — the one-liner never needs updating
+
+**Install**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/memogonzalezj-dev/ToneArchitect/main/install.sh | bash
+```
+
+Requires macOS 12+ on Apple Silicon.
+
+---
+
 ### v1.0.2 - Beta (2026-05-23)
 
 Added JSON collection for tunning local LLM
