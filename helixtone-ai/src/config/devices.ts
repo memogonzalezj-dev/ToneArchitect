@@ -11,10 +11,12 @@ export interface DeviceConfig {
   deviceId:          number;   // data.device in HLX JSON
   deviceVersion:     number;   // data.device_version in HLX JSON
   appVersion:        number;   // data.meta.appversion in HLX JSON
-  maxBlocks:         number;   // DSP block hard limit
+  maxBlocks:         number;   // DSP block hard limit (per dsp0 for dual-DSP devices)
   snapshotCount:     number;   // How many snapshots to write
   hasAmpCab:         boolean;  // Whether amp/cab blocks are supported
-  inputModel:        string;   // @model for inputA / inputB
+  dualDsp:           boolean;  // Whether device has two DSP chips (Helix LT/Floor/etc.)
+  inputModel:        string;   // @model for inputA
+  inputModelB?:      string;   // @model for inputB (if different from inputA)
   outputMainModel:   string;   // @model for outputA
   outputSendModel:   string;   // @model for outputB
   available:         boolean;  // false = "Coming Soon" in dropdown
@@ -30,6 +32,7 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       6,
     snapshotCount:   3,
     hasAmpCab:       true,
+    dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
@@ -44,9 +47,27 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       9,
     snapshotCount:   4,
     hasAmpCab:       false,
+    dualDsp:         false,
     inputModel:      "HelixFx_AppDSPFlowInput",
     outputMainModel: "HelixFx_AppDSPFlowOutput",
     outputSendModel: "HelixFx_AppDSPFlowOutput",
+    available:       true,
+  },
+  {
+    // Verified from real LT export: Black_Album_Thrash_LT.hlx
+    id:              "helix_lt",
+    label:           "Helix LT",
+    deviceId:        2162692,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,       // Blocks placed in dsp0; dsp1 left as empty valid chain
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         true,
+    inputModel:      "HD2_AppDSPFlow1Input",
+    inputModelB:     "HD2_AppDSPFlow2Input",
+    outputMainModel: "HD2_AppDSPFlowOutput",
+    outputSendModel: "HD2_AppDSPFlowOutput",
     available:       true,
   },
   {
@@ -62,6 +83,7 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       8,
     snapshotCount:   4,
     hasAmpCab:       true,
+    dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
@@ -76,6 +98,7 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       1,
     snapshotCount:   1,
     hasAmpCab:       false,
+    dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
