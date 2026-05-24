@@ -195,20 +195,63 @@ export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAU
   };
 
   const blockKeys: string[] = [];
-  const orderedBlocks = sortBlocks(preset.blocks).slice(0, device.maxBlocks);
-  orderedBlocks.forEach((b, i) => {
-    const key = `block${i}`;
+
+  // Separate cab from the numbered block sequence — it lives as "cab0" linked to the amp
+  const allBlocks   = sortBlocks(preset.blocks).slice(0, device.maxBlocks);
+  const cabBlock    = allBlocks.find((b) => b.type.toLowerCase() === "cab") ?? null;
+  const nonCabBlocks = allBlocks.filter((b) => b.type.toLowerCase() !== "cab");
+
+  let blockIndex = 0;
+  nonCabBlocks.forEach((b) => {
+    const isAmp = b.type.toLowerCase() === "amp";
+    const key   = `block${blockIndex}`;
     blockKeys.push(key);
+
     dsp0[key] = {
       "@enabled":             true,
       "@model":               b.model,
       "@no_snapshot_bypass":  false,
       "@path":                0,
-      "@position":            i,
-      "@type":                b.type.toLowerCase() === "cab" ? 2 : b.type.toLowerCase() === "amp" ? 1 : 0,
+      "@position":            blockIndex,
+      "@stereo":              false,
+      // @type: 3 = amp with linked cab, 0 = everything else
+      "@type":                isAmp && cabBlock ? 3 : 0,
+      ...(isAmp && cabBlock ? { "@cab": "cab0", "@bypassvolume": 1 } : {}),
       ...sanitizeParameters(b.parameters),
     };
+
+    // Attach cab as "cab0" immediately after the amp entry
+    if (isAmp && cabBlock) {
+      const { level: _l, pan: _p, ...cabParams } = sanitizeParameters(
+        cabBlock.parameters as Record<string, number | boolean | string>
+      ) as Record<string, number | boolean | string>;
+      dsp0["cab0"] = {
+        "@model":   cabBlock.model,
+        "@enabled": true,
+        "@mic":     0,
+        ...cabParams,
+      };
+    }
+
+    blockIndex++;
   });
+
+  // If there was no amp but a cab exists, emit it as a standalone block (rare)
+  if (cabBlock && !nonCabBlocks.some((b) => b.type.toLowerCase() === "amp")) {
+    const key = `block${blockIndex}`;
+    blockKeys.push(key);
+    dsp0[key] = {
+      "@enabled":            true,
+      "@model":              cabBlock.model,
+      "@no_snapshot_bypass": false,
+      "@path":               0,
+      "@position":           blockIndex,
+      "@stereo":             false,
+      "@type":               2,
+      ...sanitizeParameters(cabBlock.parameters),
+    };
+    blockIndex++;
+  }
 
   dsp0["outputA"] = {
     "@model":  device.outputMainModel,
@@ -239,7 +282,7 @@ export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAU
       "@model":               "HD2_AppDSPFlowJoin",
       "@enabled":             true,
       "@no_snapshot_bypass":  false,
-      "@position":            orderedBlocks.length + 1,
+      "@position":            blockIndex + 1,
       "A Level":              0,
       "A Pan":                0,
       "B Level":              0,
