@@ -562,7 +562,7 @@ export default function App() {
                         return (
                           <div key={`${block.key}-${k}`} className="flex justify-between items-center py-2.5 border-b border-white/[0.03] group">
                             <span className="text-xs text-white/30 font-serif italic group-hover:text-white/60 transition-colors">
-                              {block.model} <span className="opacity-40">•</span> {k}
+                              {block.model.replace(/^(HD2_|HX2_|Agoura_|HelixStomp_AppDSPFlow|P35_)/, "")} <span className="opacity-40">•</span> {k}
                             </span>
                             <span className="text-xs font-mono text-blue-400">{display}</span>
                           </div>

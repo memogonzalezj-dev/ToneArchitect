@@ -128,4 +128,4 @@ export const DEVICES: DeviceConfig[] = [
   },
 ];
 
-export const DEFAULT_DEVICE = DEVICES[0];
+export const DEFAULT_DEVICE = DEVICES.find((d) => d.available) ?? DEVICES[1];
