@@ -566,26 +566,6 @@ export default function App() {
                     ).slice(0, 24)}
                   </div>
 
-                  <div className="mt-8 p-4 bg-white/5 rounded-sm space-y-3">
-                    {preset.manualInstructions
-                      .split(/\n|(?=\d+\.)/)
-                      .map((s) => s.trim())
-                      .filter(Boolean)
-                      .map((line, i) => {
-                        const clean = line
-                          .replace(/^(\d+)\.\s*/, "")
-                          .replace(/HD2_CabMicIr_/g, "")
-                          .replace(/HD2_CabMic_/g, "")
-                          .replace(/\b(HD2_|HX2_|Agoura_Amp|Agoura_|HelixStomp_)/g, "");
-                        const num = line.match(/^(\d+)\./)?.[1];
-                        return (
-                          <div key={i} className="flex gap-3 items-start">
-                            <span className="text-[10px] font-mono text-blue-400/60 flex-shrink-0 w-4 text-right">{num ?? "•"}</span>
-                            <p className="text-[10px] text-white/40 font-mono leading-relaxed">{clean}</p>
-                          </div>
-                        );
-                      })}
-                  </div>
                 </div>
               </section>
             </motion.div>
