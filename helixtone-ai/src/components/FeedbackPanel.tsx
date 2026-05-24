@@ -108,11 +108,9 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
                   </button>
                 ))}
               </div>
-              {(hover || rating) > 0 && (
-                <p className="text-[10px] text-white/40 font-mono">
-                  {labels[hover || rating]}
-                </p>
-              )}
+              <p className="text-[10px] text-white/40 font-mono h-4">
+                {(hover || rating) > 0 ? labels[hover || rating] : ""}
+              </p>
             </div>
 
             {/* Comment */}
