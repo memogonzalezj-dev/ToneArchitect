@@ -19,3 +19,5 @@ File.txt
 # Logs
 *.log
 npm-debug.log*
+build-signed.sh
+tone-architect-cert.p12
