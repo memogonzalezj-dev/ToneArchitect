@@ -556,7 +556,7 @@ export default function App() {
                           : String(v);
                         return (
                           <div key={`${block.key}-${k}`} className="flex justify-between items-center py-2.5 border-b border-white/[0.03] group">
-                            <span className="text-xs text-white/30 font-serif italic group-hover:text-white/60 transition-colors">
+                            <span className="text-xs text-white/30 font-mono group-hover:text-white/60 transition-colors">
                               {block.model.replace(/^(HD2_|HX2_|Agoura_|HelixStomp_AppDSPFlow|P35_)/, "")} <span className="opacity-40">•</span> {k}
                             </span>
                             <span className="text-xs font-mono text-blue-400">{display}</span>
@@ -566,10 +566,25 @@ export default function App() {
                     ).slice(0, 24)}
                   </div>
 
-                  <div className="mt-8 p-4 bg-white/5 rounded-sm">
-                    <p className="text-[10px] text-white/30 font-mono leading-relaxed whitespace-pre-wrap">
-                      {preset.manualInstructions}
-                    </p>
+                  <div className="mt-8 p-4 bg-white/5 rounded-sm space-y-3">
+                    {preset.manualInstructions
+                      .split(/\n|(?=\d+\.)/)
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                      .map((line, i) => {
+                        const clean = line
+                          .replace(/^(\d+)\.\s*/, "")
+                          .replace(/HD2_CabMicIr_/g, "")
+                          .replace(/HD2_CabMic_/g, "")
+                          .replace(/\b(HD2_|HX2_|Agoura_Amp|Agoura_|HelixStomp_)/g, "");
+                        const num = line.match(/^(\d+)\./)?.[1];
+                        return (
+                          <div key={i} className="flex gap-3 items-start">
+                            <span className="text-[10px] font-mono text-blue-400/60 flex-shrink-0 w-4 text-right">{num ?? "•"}</span>
+                            <p className="text-[10px] text-white/40 font-mono leading-relaxed">{clean}</p>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </section>
