@@ -569,10 +569,9 @@ ipcMain.handle('generate-preset', async (_e, { system, prompt, temperature, maxT
 
 // ─── Bundled binary paths ─────────────────────────────────────────────────────
 
-function getBinPath(name) {
-  return app.isPackaged
-    ? path.join(process.resourcesPath, 'bin', name)
-    : path.join(__dirname, '..', 'resources', 'bin', name);
+function getYtdlpPath() {
+  // yt-dlp lives in userData (downloaded at runtime, not bundled)
+  return path.join(app.getPath('userData'), 'bin', 'yt-dlp');
 }
 
 function getFfmpegPath() {
@@ -580,15 +579,49 @@ function getFfmpegPath() {
   return app.isPackaged ? raw.replace('app.asar', 'app.asar.unpacked') : raw;
 }
 
+const YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos';
+
+async function ensureYtdlp() {
+  const dest = getYtdlpPath();
+  if (fs.existsSync(dest)) return dest;
+
+  const binDir = path.dirname(dest);
+  if (!fs.existsSync(binDir)) fs.mkdirSync(binDir, { recursive: true });
+
+  await new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(YTDLP_URL, (res) => {
+      // Follow redirects
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        https.get(res.headers.location, (res2) => {
+          res2.pipe(file);
+          file.on('finish', () => file.close(resolve));
+          res2.on('error', reject);
+        }).on('error', reject);
+      } else {
+        res.pipe(file);
+        file.on('finish', () => file.close(resolve));
+        res.on('error', reject);
+      }
+    }).on('error', (err) => {
+      fs.unlink(dest, () => {});
+      reject(err);
+    });
+  });
+
+  fs.chmodSync(dest, 0o755);
+  return dest;
+}
+
 // ─── IPC: YouTube audio download ──────────────────────────────────────────────
 
 ipcMain.handle('download-youtube-audio', async (_e, url) => {
-  const ytdlp   = getBinPath('yt-dlp');
+  const ytdlp   = await ensureYtdlp();
   const ffmpeg  = getFfmpegPath();
   const tmpFile = path.join(os.tmpdir(), `tone-analysis-${crypto.randomUUID()}.wav`);
 
   if (!fs.existsSync(ytdlp)) {
-    throw new Error('yt-dlp binary not found. Please reinstall the app.');
+    throw new Error('Failed to download yt-dlp. Check your internet connection.');
   }
 
   await new Promise((resolve, reject) => {

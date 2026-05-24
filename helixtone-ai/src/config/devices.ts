@@ -11,10 +11,12 @@ export interface DeviceConfig {
   deviceId:          number;   // data.device in HLX JSON
   deviceVersion:     number;   // data.device_version in HLX JSON
   appVersion:        number;   // data.meta.appversion in HLX JSON
-  maxBlocks:         number;   // DSP block hard limit
+  maxBlocks:         number;   // DSP block hard limit (per dsp0 for dual-DSP devices)
   snapshotCount:     number;   // How many snapshots to write
   hasAmpCab:         boolean;  // Whether amp/cab blocks are supported
-  inputModel:        string;   // @model for inputA / inputB
+  dualDsp:           boolean;  // Whether device has two DSP chips (Helix LT/Floor/etc.)
+  inputModel:        string;   // @model for inputA
+  inputModelB?:      string;   // @model for inputB (if different from inputA)
   outputMainModel:   string;   // @model for outputA
   outputSendModel:   string;   // @model for outputB
   available:         boolean;  // false = "Coming Soon" in dropdown
@@ -30,6 +32,7 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       6,
     snapshotCount:   3,
     hasAmpCab:       true,
+    dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
@@ -44,28 +47,44 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       9,
     snapshotCount:   4,
     hasAmpCab:       false,
+    dualDsp:         false,
     inputModel:      "HelixFx_AppDSPFlowInput",
     outputMainModel: "HelixFx_AppDSPFlowOutput",
     outputSendModel: "HelixFx_AppDSPFlowOutput",
     available:       true,
   },
   {
+    // Verified from real LT export: Black_Album_Thrash_LT.hlx
+    id:              "helix_lt",
+    label:           "Helix LT",
+    deviceId:        2162692,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,       // Blocks placed in dsp0; dsp1 left as empty valid chain
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         true,
+    inputModel:      "HD2_AppDSPFlow1Input",
+    inputModelB:     "HD2_AppDSPFlow2Input",
+    outputMainModel: "HD2_AppDSPFlowOutput",
+    outputSendModel: "HD2_AppDSPFlowOutput",
+    available:       true,
+  },
+  {
+    // Verified from real XL export: helix_example_StompXL.hlx (Texas Flood & Cold Shot)
     id:              "hx_stomp_xl",
     label:           "HX Stomp XL",
-    // ⚠️  device_id NOT yet confirmed from a real XL preset with 8 blocks.
-    // The file we tested only had 6 blocks / 3 snapshots — likely a mis-named Stomp preset.
-    // Using shared device_id with HX Stomp risks silent import corruption on Stomp hardware.
-    // Enable once we have a verified 8-block HX Stomp XL export.
-    deviceId:        0,
-    deviceVersion:   0,
-    appVersion:      0,
-    maxBlocks:       8,
+    deviceId:        2162699,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,        // join @position 8 confirmed in real export
     snapshotCount:   4,
     hasAmpCab:       true,
+    dualDsp:         false,    // dsp1 is {} in XL presets — single DSP
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
-    available:       false,
+    available:       true,
   },
   {
     id:              "hx_one",
@@ -76,6 +95,7 @@ export const DEVICES: DeviceConfig[] = [
     maxBlocks:       1,
     snapshotCount:   1,
     hasAmpCab:       false,
+    dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",

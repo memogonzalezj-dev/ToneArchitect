@@ -57,18 +57,24 @@ function buildIrUuidTable(): Record<string, string> {
   return table;
 }
 
-function buildSnapshots(blockKeys: string[], count: number): Record<string, unknown> {
+function buildSnapshots(
+  blockKeys: string[],
+  count: number,
+  dualDsp: boolean,
+): Record<string, unknown> {
   const enabledMap: Record<string, boolean> = {};
   blockKeys.forEach((k) => { enabledMap[k] = true; });
 
   const snapshot = (name: string, valid: boolean) => ({
-    "@name": name,
-    "@tempo": 120,
-    "@valid": valid,
-    "blocks": { "dsp0": { ...enabledMap } },
-    "@pedalstate": 0,
-    "@ledcolor": 0,
+    "@name":        name,
+    "@tempo":       120,
+    "@valid":       valid,
+    "@pedalstate":  0,
+    "@ledcolor":    0,
     "@custom_name": false,
+    "blocks": dualDsp
+      ? { "dsp0": { ...enabledMap }, "dsp1": {} }
+      : { "dsp0": { ...enabledMap } },
   });
 
   const result: Record<string, unknown> = {};
@@ -78,20 +84,111 @@ function buildSnapshots(blockKeys: string[], count: number): Record<string, unkn
   return result;
 }
 
-export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAULT_DEVICE): string {
-  const dsp0: Record<string, unknown> = {
+// Empty-but-valid DSP chain for dual-DSP devices (dsp1 carries no AI blocks)
+function buildEmptyDsp1(device: DeviceConfig): Record<string, unknown> {
+  return {
     inputA: {
-      "@input": 1,
-      "@model": device.inputModel,
+      "@input":    0,
+      "@model":    device.inputModel,
       "noiseGate": false,
-      "decay": 0.5,
+      "decay":     0.5,
       "threshold": -48,
     },
     inputB: {
-      "@input": 0,
-      "@model": device.inputModel,
+      "@input":    0,
+      "@model":    device.inputModelB ?? device.inputModel,
       "noiseGate": false,
-      "decay": 0.5,
+      "decay":     0.5,
+      "threshold": -48,
+    },
+    outputA: {
+      "@model":  device.outputMainModel,
+      "@output": 1,
+      "pan":     0.5,
+      "gain":    0,
+    },
+    outputB: {
+      "@model":  device.outputSendModel,
+      "@output": 0,
+      "pan":     0.5,
+      "gain":    0,
+    },
+    split: {
+      "@model":               "HD2_AppDSPFlowSplitY",
+      "@enabled":             true,
+      "@no_snapshot_bypass":  false,
+      "@position":            0,
+      "BalanceA":             0.5,
+      "BalanceB":             0.5,
+      "bypass":               false,
+    },
+    join: {
+      "@model":               "HD2_AppDSPFlowJoin",
+      "@enabled":             true,
+      "@no_snapshot_bypass":  false,
+      "@position":            1,
+      "A Level":              0,
+      "A Pan":                0,
+      "B Level":              0,
+      "B Pan":                1,
+      "B Polarity":           false,
+      "Level":                0,
+    },
+  };
+}
+
+// dt / powercab sections required by Helix LT/Floor devices
+function buildDtSections(): Record<string, unknown> {
+  const dtEntry = {
+    "@model":          "@dt",
+    "@dt_12ax7boost":  0,
+    "@dt_bplusvoltage": 0,
+    "@dt_channel":     0,
+    "@dt_feedbackcap": 0,
+    "@dt_poweramp":    1,
+    "@dt_reverb":      true,
+    "@dt_revmix":      0.25,
+    "@dt_topology":    0,
+    "@dt_tubeconfig":  0,
+  };
+  const pcEntry = {
+    "@model":                    "@powercab",
+    "@powercab_color":           0,
+    "@powercab_distance":        3.5,
+    "@powercab_flatlevel":       0,
+    "@powercab_hicut":           20100,
+    "@powercab_irlevel":         -18,
+    "@powercab_lowcut":          19.9,
+    "@powercab_mic":             0,
+    "@powercab_speaker":         0,
+    "@powercab_speakerlevel":    -15,
+    "@powercab_userir":          0,
+  };
+  return {
+    dt0:          { ...dtEntry },
+    dt1:          { ...dtEntry },
+    dtdual:       { ...dtEntry },
+    powercab0:    { ...pcEntry },
+    powercab1:    { ...pcEntry },
+    powercabdual: { ...pcEntry },
+  };
+}
+
+export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAULT_DEVICE): string {
+  // ── dsp0: all AI-generated blocks go here ────────────────────────────────
+  const dsp0: Record<string, unknown> = {
+    inputA: {
+      "@input":    1,
+      "@model":    device.inputModel,
+      "noiseGate": false,
+      "decay":     0.5,
+      "threshold": -48,
+    },
+    inputB: {
+      "@input":    0,
+      "@model":    device.inputModelB ?? device.inputModel,
+      "noiseGate": false,
+      "decay":     0.5,
       "threshold": -48,
     },
   };
@@ -102,95 +199,128 @@ export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAU
     const key = `block${i}`;
     blockKeys.push(key);
     dsp0[key] = {
-      "@enabled": true,
-      "@model": b.model,
-      "@no_snapshot_bypass": false,
-      "@path": 0,
-      "@position": i,
-      "@type": b.type.toLowerCase() === "cab" ? 2 : b.type.toLowerCase() === "amp" ? 1 : 0,
+      "@enabled":             true,
+      "@model":               b.model,
+      "@no_snapshot_bypass":  false,
+      "@path":                0,
+      "@position":            i,
+      "@type":                b.type.toLowerCase() === "cab" ? 2 : b.type.toLowerCase() === "amp" ? 1 : 0,
       ...sanitizeParameters(b.parameters),
     };
   });
 
   dsp0["outputA"] = {
-    "@model": device.outputMainModel,
+    "@model":  device.outputMainModel,
     "@output": 1,
-    "pan": 0.5,
-    "gain": 0,
+    "pan":     0.5,
+    "gain":    0,
   };
   dsp0["outputB"] = {
-    "@model": device.outputSendModel,
+    "@model":  device.outputSendModel,
     "@output": 0,
-    "Type": true,
-    "pan": 0.5,
-    "gain": 0,
+    "Type":    true,
+    "pan":     0.5,
+    "gain":    0,
   };
 
-  const snapshots = buildSnapshots(blockKeys, device.snapshotCount);
+  // Dual-DSP devices (Helix LT/Floor) require split/join on dsp0 too
+  if (device.dualDsp) {
+    dsp0["split"] = {
+      "@model":               "HD2_AppDSPFlowSplitY",
+      "@enabled":             true,
+      "@no_snapshot_bypass":  false,
+      "@position":            0,
+      "BalanceA":             0.5,
+      "BalanceB":             0.5,
+      "bypass":               false,
+    };
+    dsp0["join"] = {
+      "@model":               "HD2_AppDSPFlowJoin",
+      "@enabled":             true,
+      "@no_snapshot_bypass":  false,
+      "@position":            orderedBlocks.length + 1,
+      "A Level":              0,
+      "A Pan":                0,
+      "B Level":              0,
+      "B Pan":                1,
+      "B Polarity":           false,
+      "Level":                0,
+    };
+  }
+
+  const snapshots = buildSnapshots(blockKeys, device.snapshotCount, device.dualDsp);
+
+  // ── Tone object ───────────────────────────────────────────────────────────
+  const tone: Record<string, unknown> = {
+    dsp0,
+    dsp1: device.dualDsp ? buildEmptyDsp1(device) : {},
+    global: {
+      "@model":            "@global_params",
+      "@topology0":        "A",
+      "@topology1":        device.dualDsp ? "A" : 0,
+      "@cursor_dsp":       0,
+      "@cursor_path":      0,
+      "@cursor_position":  0,
+      "@cursor_group":     blockKeys[0] ?? "block0",
+      "@tempo":            120,
+      "@current_snapshot": 0,
+      "@pedalstate":       2,
+      "@guitarpad":        0,
+      "@guitarinputZ":     0,
+      "@DtSelect":         2,
+      "@PowercabMode":     0,
+      "@PowercabSelect":   2,
+      "@PowercabVoicing":  0,
+    },
+    irUuidTable: buildIrUuidTable(),
+    variax: {
+      "@variax_model":        0,
+      "@variax_customtuning": true,
+      "@variax_lockctrls":    0,
+      "@variax_magmode":      true,
+      "@variax_str1level":    1,
+      "@variax_str1tuning":   0,
+      "@variax_str2level":    1,
+      "@variax_str2tuning":   0,
+      "@variax_str3level":    1,
+      "@variax_str3tuning":   0,
+      "@variax_str4level":    1,
+      "@variax_str4tuning":   0,
+      "@variax_str5level":    1,
+      "@variax_str5tuning":   0,
+      "@variax_str6level":    1,
+      "@variax_str6tuning":   0,
+      "@variax_toneknob":     -0.1,
+      "@variax_volumeknob":   -0.1,
+    },
+    ...snapshots,
+  };
+
+  // dt/powercab sections are expected by Helix LT/Floor devices
+  if (device.dualDsp) {
+    Object.assign(tone, buildDtSections());
+  }
 
   const hlx = {
+    version: 6,
     data: {
-      meta: {
-        name: preset.name.substring(0, 24),
-        application: "HX Edit",
-        build_sha: "",
-        modifieddate: Math.floor(Date.now() / 1000),
-        appversion: device.appVersion,
-      },
-      device: device.deviceId,
+      device:         device.deviceId,
       device_version: device.deviceVersion,
-      tone: {
-        dsp1: {},
-        global: {
-          "@PowercabVoicing": 0,
-          "@model": "@global_params",
-          "@topology0": "A",
-          "@cursor_dsp": 0,
-          "@PowercabMode": 0,
-          "@guitarpad": 0,
-          "@pedalstate": 2,
-          "@cursor_group": blockKeys[0] ?? "block0",
-          "@DtSelect": 2,
-          "@cursor_path": 0,
-          "@current_snapshot": 0,
-          "@tempo": 120,
-          "@cursor_position": 0,
-          "@topology1": 0,
-          "@PowercabSelect": 2,
-          "@guitarinputZ": 0,
-        },
-        irUuidTable: buildIrUuidTable(),
-        variax: {
-          "@variax_model": 0,
-          "@variax_str4tuning": 0,
-          "@variax_str1level": 1,
-          "@variax_str5level": 1,
-          "@variax_str1tuning": 0,
-          "@variax_lockctrls": 0,
-          "@variax_str2tuning": 0,
-          "@variax_customtuning": true,
-          "@variax_magmode": true,
-          "@variax_str2level": 1,
-          "@variax_str5tuning": 0,
-          "@variax_str6level": 1,
-          "@variax_toneknob": -0.1,
-          "@variax_str3level": 1,
-          "@variax_str3tuning": 0,
-          "@variax_str6tuning": 0,
-          "@variax_volumeknob": -0.1,
-          "@variax_str4level": 1,
-        },
-        dsp0,
-        ...snapshots,
+      meta: {
+        name:         preset.name.substring(0, 24),
+        application:  "HX Edit",
+        build_sha:    "",
+        modifieddate: Math.floor(Date.now() / 1000),
+        appversion:   device.appVersion,
       },
+      tone,
     },
     meta: {
       original: 0,
-      pbn: 0,
-      premium: 0,
+      pbn:      0,
+      premium:  0,
     },
     schema: "L6Preset",
-    version: 6,
   };
 
   return JSON.stringify(hlx, null, 2);
