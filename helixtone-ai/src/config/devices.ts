@@ -58,23 +58,15 @@ export const DEVICES: DeviceConfig[] = [
     outputSendModel: "HD2_AppDSPFlowOutput",
     available:       true,
   },
-  {
-    // TODO: need a real .hlx export from a Helix Stadium to confirm device ID
-    id:              "helix_stadium",
-    label:           "Helix Stadium",
-    deviceId:        0,
-    deviceVersion:   0,
-    appVersion:      0,
-    maxBlocks:       8,
-    snapshotCount:   8,
-    hasAmpCab:       true,
-    dualDsp:         true,
-    inputModel:      "HD2_AppDSPFlow1Input",
-    inputModelB:     "HD2_AppDSPFlow2Input",
-    outputMainModel: "HD2_AppDSPFlowOutput",
-    outputSendModel: "HD2_AppDSPFlowOutput",
-    available:       false,
-  },
+  // ⚠️  Helix Stadium uses a completely different file format (.hsp, not .hlx).
+  //    device_id: 2490368, device_version: 302056738
+  //    Block structure: flow[n].b00 (not dsp0.block0)
+  //    Model prefixes: P35_, Agoura_, HX2_ (not HD2_/HelixStomp_)
+  //    Params wrapped: { "Drive": { "value": 0.45 } } (not flat values)
+  //    Snapshots inline per-param, not separate snapshot0..N objects
+  //    File has binary header prefix before JSON ("rpshnosj{")
+  //    Supporting Stadium requires a new generator — this is v2.0 scope.
+  //    Do NOT enable until stadiumService.ts is built and tested.
 
   // ── HX compact units (single DSP) ───────────────────────────────────────
   {
