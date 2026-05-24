@@ -144,8 +144,23 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ---
 
+## Homebrew Tap (in progress)
+
+- **Tap repo:** `https://github.com/memogonzalezj-dev/homebrew-tap`
+- **Cask:** `Casks/tone-architect.rb`
+- **Install command:**
+  ```bash
+  brew install --cask memogonzalezj-dev/tap/tone-architect
+  ```
+- **Status:** Live and working — `brew info --cask tone-architect` resolves correctly
+- **On each new release:** update `version` and `sha256` in `Casks/tone-architect.rb`
+  - Get SHA256: `shasum -a 256 "dist_desktop/Tone Architect-X.X.X-arm64.dmg"`
+
+---
+
 ## Next Session Ideas
 
+- **Finish Homebrew cask**: add tap install to README, post to Reddit with brew command instead of curl
 - **Test audio analysis end-to-end**: upload a file + YouTube URL, verify descriptor shows in badge and affects preset
 - **HX Stomp XL / HX One support**: need a real `.hlx` export from each device to confirm `device_id`
 - **Audio analysis tuning**: collect beta feedback on whether audio reference improves preset quality
