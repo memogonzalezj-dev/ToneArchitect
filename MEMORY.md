@@ -119,8 +119,8 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ## Latest Release
 
-- **DMG:** `dist_desktop/Tone Architect-1.0.2-arm64.dmg`
-- **GitHub Release:** `https://github.com/memogonzalezj-dev/ToneArchitect/releases/tag/v1.0.2.1`
+- **DMG:** `dist_desktop/Tone Architect-1.1.0-arm64.dmg`
+- **GitHub Release:** `https://github.com/memogonzalezj-dev/ToneArchitect/releases/tag/v1.1.0`
 - **Install command:**
   ```bash
   curl -fsSL https://raw.githubusercontent.com/memogonzalezj-dev/ToneArchitect/main/install.sh | bash
@@ -128,31 +128,28 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ---
 
-## Last Session Work (2026-05-23)
+## Last Session Work (2026-05-24)
 
-### Completed — v1.1.0 fully merged + bugfixed (PRs #3, #4, #6)
-- **arm64-only confirmed** — Intel Macs explicitly unsupported; startup arch guard added
-- Bundled `yt-dlp` + `ffmpeg-static`; IPC `download-youtube-audio` (30s mono WAV → renderer)
-- `audioAnalysis.ts`: radix-2 FFT signal processor → `AudioAnalysis` + text descriptor injected into Llama prompt
-- `App.tsx`: Audio Reference panel — **file upload + YouTube URL always visible side-by-side** (no toggle)
-- `install.sh`: auto-detects latest GitHub Release via API — one-liner never needs updating again
-- Version bumped to 1.1.0 across package.json / main.js / FeedbackPanel / App footer
-- **Bug fixed (PR #6)**: `Math.max(...largeArray)` stack overflow on real audio files — replaced with `for` loops in `envelopeFeatures` and `compressionEstimate`
-- Local `main` is fully synced with remote (commit `61093c9`)
+### Completed — v1.1.0 DMG built + published
+- **Button renamed**: "INITIALIZE SYNTHESIS" → "MAKE THE TONE"
+- **Button enabled on audio-only**: `disabled` guard + `handleSubmit` early-return both changed from `!query` → `!query && !audioAnalysis`
+- **Empty query fallback** in `llamaService.ts`: prompt uses `"Match the provided audio reference"` when text field is blank
+- **DMG built**: `npm run dist:mac` → `dist_desktop/Tone Architect-1.1.0-arm64.dmg` (210 MB)
+- **GitHub Release updated**: new DMG uploaded to existing v1.1.0 release via `gh release upload --clobber`
+- **Git note**: all commits landed directly on `main` this session (no feature branch). Next session: always `git checkout -b session/vX.X.X-feature` at the start.
 
 ### Known Issues
 - HX Stomp XL and HX One still `available: false` — need real `.hlx` files to confirm device IDs
 - Apple Developer ID not purchased yet ($99) — app is unsigned, install.sh handles quarantine
-- v1.1.0 DMG not yet built or published as GitHub Release
 
 ---
 
 ## Next Session Ideas
 
-- **Release v1.1.0**: `npm run dist:mac` → `gh release create v1.1.0 "dist_desktop/Tone Architect-1.1.0-arm64.dmg"`
 - **Test audio analysis end-to-end**: upload a file + YouTube URL, verify descriptor shows in badge and affects preset
 - **HX Stomp XL / HX One support**: need a real `.hlx` export from each device to confirm `device_id`
 - **Audio analysis tuning**: collect beta feedback on whether audio reference improves preset quality
+- **v1.2.0 ideas**: preset history/favorites, tone-matching score display, custom IR cab support
 
 ### Start command for next session
 ```bash
