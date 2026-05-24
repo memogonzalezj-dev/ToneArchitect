@@ -71,23 +71,20 @@ export const DEVICES: DeviceConfig[] = [
     available:       true,
   },
   {
+    // Verified from real XL export: helix_example_StompXL.hlx (Texas Flood & Cold Shot)
     id:              "hx_stomp_xl",
     label:           "HX Stomp XL",
-    // ⚠️  device_id NOT yet confirmed from a real XL preset with 8 blocks.
-    // The file we tested only had 6 blocks / 3 snapshots — likely a mis-named Stomp preset.
-    // Using shared device_id with HX Stomp risks silent import corruption on Stomp hardware.
-    // Enable once we have a verified 8-block HX Stomp XL export.
-    deviceId:        0,
-    deviceVersion:   0,
-    appVersion:      0,
-    maxBlocks:       8,
+    deviceId:        2162699,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,        // join @position 8 confirmed in real export
     snapshotCount:   4,
     hasAmpCab:       true,
-    dualDsp:         false,
+    dualDsp:         false,    // dsp1 is {} in XL presets — single DSP
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
-    available:       false,
+    available:       true,
   },
   {
     id:              "hx_one",
