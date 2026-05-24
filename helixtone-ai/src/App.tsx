@@ -308,17 +308,15 @@ export default function App() {
                     </div>
                     <div className="space-y-3">
                       <label className="text-[10px] uppercase tracking-[0.2em] text-white/30 block">Gear Photo</label>
-                      <label className="cursor-pointer block">
-                        <input type="file" accept="image/*" onChange={handleGearUpload} className="hidden" />
-                        <div className={`h-11 border rounded-sm flex items-center justify-center gap-2 transition-all ${gearImage ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-white/30 hover:border-white/20"}`}>
-                          {gearImage
-                            ? <img src={gearImage} className="w-5 h-5 object-cover rounded-sm grayscale" />
-                            : <Music className="w-4 h-4" />}
-                          <span className="text-[9px] font-mono tracking-widest uppercase">
-                            {gearImage ? "Gear loaded" : "Upload gear photo"}
-                          </span>
+                      <div className="cursor-not-allowed opacity-40">
+                        <div className="h-11 border border-white/5 rounded-sm flex items-center justify-between px-4 text-white/30">
+                          <div className="flex items-center gap-2">
+                            <Music className="w-4 h-4" />
+                            <span className="text-[9px] font-mono tracking-widest uppercase">Upload your equipment</span>
+                          </div>
+                          <span className="text-[8px] tracking-widest text-white/20 border border-white/10 px-2 py-0.5 font-mono">COMING SOON</span>
                         </div>
-                      </label>
+                      </div>
                     </div>
                   </div>
 
@@ -392,13 +390,10 @@ export default function App() {
 
                   {/* Controls */}
                   <div className="space-y-4">
-                    <button
-                      onClick={() => setHasPedals(!hasPedals)}
-                      className={`w-full px-4 h-11 rounded-sm border text-[10px] font-mono tracking-widest transition-all flex items-center justify-between ${hasPedals ? "border-blue-500 bg-blue-500/10 text-blue-400" : "border-white/10 bg-white/5 text-white/30 hover:border-white/20"}`}
-                    >
-                      <span>USE EXTERNAL PEDALBOARD OPTIMIZATION</span>
-                      <div className={`w-2 h-2 rounded-full ${hasPedals ? "bg-blue-500" : "bg-white/10"}`} />
-                    </button>
+                    <div className="w-full px-4 h-11 rounded-sm border border-white/5 text-[10px] font-mono tracking-widest flex items-center justify-between cursor-not-allowed opacity-40">
+                      <span className="text-white/30">USE EXTERNAL PEDALBOARD OPTIMIZATION</span>
+                      <span className="text-[8px] tracking-widest text-white/20 border border-white/10 px-2 py-0.5">COMING SOON</span>
+                    </div>
 
                     <button
                       onClick={handleSubmit}
@@ -561,8 +556,8 @@ export default function App() {
                           : String(v);
                         return (
                           <div key={`${block.key}-${k}`} className="flex justify-between items-center py-2.5 border-b border-white/[0.03] group">
-                            <span className="text-xs text-white/30 font-serif italic group-hover:text-white/60 transition-colors">
-                              {block.model} <span className="opacity-40">•</span> {k}
+                            <span className="text-xs text-white/30 font-mono group-hover:text-white/60 transition-colors">
+                              {block.model.replace(/^(HD2_|HX2_|Agoura_|HelixStomp_AppDSPFlow|P35_)/, "")} <span className="opacity-40">•</span> {k}
                             </span>
                             <span className="text-xs font-mono text-blue-400">{display}</span>
                           </div>
@@ -571,10 +566,25 @@ export default function App() {
                     ).slice(0, 24)}
                   </div>
 
-                  <div className="mt-8 p-4 bg-white/5 rounded-sm">
-                    <p className="text-[10px] text-white/30 font-mono leading-relaxed whitespace-pre-wrap">
-                      {preset.manualInstructions}
-                    </p>
+                  <div className="mt-8 p-4 bg-white/5 rounded-sm space-y-3">
+                    {preset.manualInstructions
+                      .split(/\n|(?=\d+\.)/)
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                      .map((line, i) => {
+                        const clean = line
+                          .replace(/^(\d+)\.\s*/, "")
+                          .replace(/HD2_CabMicIr_/g, "")
+                          .replace(/HD2_CabMic_/g, "")
+                          .replace(/\b(HD2_|HX2_|Agoura_Amp|Agoura_|HelixStomp_)/g, "");
+                        const num = line.match(/^(\d+)\./)?.[1];
+                        return (
+                          <div key={i} className="flex gap-3 items-start">
+                            <span className="text-[10px] font-mono text-blue-400/60 flex-shrink-0 w-4 text-right">{num ?? "•"}</span>
+                            <p className="text-[10px] text-white/40 font-mono leading-relaxed">{clean}</p>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               </section>
@@ -584,7 +594,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-white/10 px-8 py-5 flex items-center justify-between bg-black text-[9px] uppercase tracking-[0.25em] text-white/20">
-        <div>Tone Architect v1.1.0 • Not affiliated with Line 6, Inc.</div>
+        <div>Tone Architect v1.5.0 • Not affiliated with Line 6, Inc.</div>
         <div>© 2026 MEMO GONZALEZ • Compatible with Line 6 {device.label}</div>
       </footer>
 

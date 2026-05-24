@@ -34,7 +34,7 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
       blocks:          preset.blocks.length,
       rating,
       feedback:        feedback.trim(),
-      app_version:     "1.1.0-beta",
+      app_version:     "1.5.0-beta",
       trainingConsent: consent === true,
       preset_json:     JSON.stringify(preset),
     };
@@ -56,7 +56,7 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}
-      className="fixed bottom-6 right-6 z-50 w-80 bg-[#0D0E12] border border-white/10 shadow-2xl"
+      className="fixed bottom-6 right-6 z-[200] w-80 bg-[#0D0E12] border border-white/10 shadow-2xl"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
@@ -108,11 +108,9 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
                   </button>
                 ))}
               </div>
-              {(hover || rating) > 0 && (
-                <p className="text-[10px] text-white/40 font-mono">
-                  {labels[hover || rating]}
-                </p>
-              )}
+              <p className="text-[10px] text-white/40 font-mono h-4">
+                {(hover || rating) > 0 ? labels[hover || rating] : ""}
+              </p>
             </div>
 
             {/* Comment */}
