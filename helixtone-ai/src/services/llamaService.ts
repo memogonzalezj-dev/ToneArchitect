@@ -103,9 +103,9 @@ function buildSystemInstruction(device: DeviceConfig): string {
   }
 
   const ampCabSection = device.hasAmpCab
-    ? `AMPS: HD2_AmpBrit2204, HD2_AmpBrit2203, HD2_AmpBritJ45Brt, HD2_AmpBritJ45Nrm, HD2_AmpBritP75Brt, HD2_AmpBritP75Nrm, HD2_AmpBritPlexiBrt, HD2_AmpBritPlexiNrm, HD2_AmpBritPlexiJump, HD2_AmpBritTremBrt, HD2_AmpA30FawnBrt, HD2_AmpA30FawnNrm, HD2_AmpEssexA15, HD2_AmpEssexA30, HD2_AmpVoltageQueen, HD2_AmpUSDeluxeNrm, HD2_AmpUSDeluxeVib, HD2_AmpUSDoubleNrm, HD2_AmpUSDoubleVib, HD2_AmpUSPrincess, HD2_AmpUSDripmanNorm, HD2_AmpTweedBluesBrt, HD2_AmpTweedBluesNrm, HD2_AmpFullertonBrt, HD2_AmpFullertonNrm, HD2_AmpMailOrderTwin, HD2_AmpStoneAge185, HD2_AmpWhoWatt100, HD2_AmpCaliRectifire, HD2_AmpCaliIVR1, HD2_AmpCaliIVLead, HD2_AmpCaliTexasCh1, HD2_AmpCaliTexasCh2, HD2_AmpPlacaterClean, HD2_AmpPlacaterDirty, HD2_AmpPVPanama, HD2_AmpPVVitriolLead, HD2_AmpDasBenzinMega, HD2_AmpGermanMahadeva, HD2_AmpGermanUbersonic, HD2_AmpANGLMeteor, HD2_AmpRevvGenPurple, HD2_AmpGSG100, HD2_AmpInterstateZed, HD2_AmpDividedDuo, HD2_AmpSoloLeadClean, HD2_AmpSoloLeadCrunch, HD2_AmpSoloLeadOD, HD2_AmpSoupPro, HD2_AmpMandarin80, HD2_AmpMandarinRocker, HD2_AmpMatchstickCh1, HD2_AmpMatchstickCh2, HD2_AmpBusyOneJump, HD2_AmpMoonJump, HD2_AmpJazzRivet120, HD2_AmpCartographer, HD2_AmpDerailedIngrid, HD2_AmpLine62204Mod, HD2_AmpLine6Badonk, HD2_AmpLine6Clarity, HD2_AmpLine6Elmsley, HD2_AmpLine6Kinetic, HD2_AmpLine6Litigator, HD2_AmpLine6Oblivion, HD2_AmpArchetypeClean, HD2_AmpArchetypeLead, HD2_AmpSVBeastBrt
+    ? `AMPS: HD2_AmpBrit2204, HD2_AmpBrit2203, HD2_AmpBritJ45Brt, HD2_AmpBritJ45Nrm, HD2_AmpBritP75Brt, HD2_AmpBritP75Nrm, HD2_AmpBritPlexiBrt, HD2_AmpBritPlexiNrm, HD2_AmpBritPlexiJump, HD2_AmpBritTremBrt, HD2_AmpBritTremNrm, HD2_AmpBritTremJump, HD2_AmpA30FawnBrt, HD2_AmpA30FawnNrm, HD2_AmpEssexA15, HD2_AmpEssexA30, HD2_AmpVoltageQueen, HD2_AmpUSSmallTweed, HD2_AmpUSDeluxeNrm, HD2_AmpUSDeluxeVib, HD2_AmpUSDoubleNrm, HD2_AmpUSDoubleVib, HD2_AmpUSPrincess, HD2_AmpUSDripmanNorm, HD2_AmpTweedBluesBrt, HD2_AmpTweedBluesNrm, HD2_AmpFullertonBrt, HD2_AmpFullertonNrm, HD2_AmpMailOrderTwin, HD2_AmpStoneAge185, HD2_AmpWhoWatt100, HD2_AmpCaliRectifire, HD2_AmpCaliIVR1, HD2_AmpCaliIVR2, HD2_AmpCaliIVLead, HD2_AmpCaliTexasCh1, HD2_AmpCaliTexasCh2, HD2_AmpPlacaterClean, HD2_AmpPlacaterDirty, HD2_AmpPVPanama, HD2_AmpPVVitriolLead, HD2_AmpDasBenzinMega, HD2_AmpGermanMahadeva, HD2_AmpGermanUbersonic, HD2_AmpANGLMeteor, HD2_AmpRevvGenPurple, HD2_AmpGSG100, HD2_AmpInterstateZed, HD2_AmpDividedDuo, HD2_AmpSoloLeadClean, HD2_AmpSoloLeadCrunch, HD2_AmpSoloLeadOD, HD2_AmpSoupPro, HD2_AmpMandarin80, HD2_AmpMandarinRocker, HD2_AmpMatchstickCh1, HD2_AmpMatchstickCh2, HD2_AmpMatchstickJump, HD2_AmpBusyOneJump, HD2_AmpMoonJump, HD2_AmpJazzRivet120, HD2_AmpCartographer, HD2_AmpDerailedIngrid, HD2_AmpLine62204Mod, HD2_AmpLine6Badonk, HD2_AmpLine6Clarity, HD2_AmpLine6Doom, HD2_AmpLine6Elektrik, HD2_AmpLine6Elmsley, HD2_AmpLine6Epic, HD2_AmpLine6Fatality, HD2_AmpLine6Kinetic, HD2_AmpLine6Litigator, HD2_AmpLine6Oblivion, HD2_AmpArchetypeClean, HD2_AmpArchetypeLead, HD2_AmpSVBeastBrt
 
-CABS: HD2_CabMicIr_1x12USDeluxe, HD2_CabMicIr_1x12Fullerton, HD2_CabMicIr_1x12OpenCast, HD2_CabMicIr_1x10USPrincess, HD2_CabMicIr_2x12BlueBell, HD2_CabMicIr_2x12SilverBell, HD2_CabMicIr_2x12DoubleC12N, HD2_CabMicIr_2x12JazzRivet, HD2_CabMicIr_4x12BlackbackH30, HD2_CabMicIr_4x12CaliV30, HD2_CabMicIr_4x12Greenback20, HD2_CabMicIr_4x12Greenback25, HD2_CabMicIr_4x12Greenback30, HD2_CabMicIr_4x12BritV30, HD2_CabMicIr_4x121960AT75, HD2_CabMicIr_4x12UberV30, HD2_CabMicIr_4x12WhoWatt100, HD2_CabMicIr_4x10TweedP10R, HD2_CabMicIr_8x10SVTAV, HD2_Cab1x12USDeluxe, HD2_Cab2x12Interstate, HD2_Cab4X12CaliV30, HD2_Cab4x121960T75, HD2_Cab4x12Greenback25, HD2_Cab4x12WhoWatt100
+CABS: HD2_CabMicIr_1x12USDeluxe, HD2_CabMicIr_1x12USDeluxeWithPan, HD2_CabMicIr_1x12Fullerton, HD2_CabMicIr_1x12OpenCast, HD2_CabMicIr_1x12OpenCastWithPan, HD2_CabMicIr_1x10USPrincess, HD2_CabMicIr_1x10USPrincessWithPan, HD2_CabMicIr_2x12BlueBell, HD2_CabMicIr_2x12BlueBellWithPan, HD2_CabMicIr_2x12SilverBell, HD2_CabMicIr_2x12DoubleC12N, HD2_CabMicIr_2x12DoubleC12NWithPan, HD2_CabMicIr_2x12JazzRivet, HD2_CabMicIr_2x12JazzRivetWithPan, HD2_CabMicIr_2x12MandarinWithPan, HD2_CabMicIr_2x12MatchH30WithPan, HD2_CabMicIr_2x15USDripmanWithPan, HD2_CabMicIr_4x10TweedP10R, HD2_CabMicIr_4x10USSuperWithPan, HD2_CabMicIr_4x12BlackbackH30, HD2_CabMicIr_4x12BlackbackH30WithPan, HD2_CabMicIr_4x12BritV30, HD2_CabMicIr_4x12CaliV30, HD2_CabMicIr_4x12CaliV30WithPan, HD2_CabMicIr_4x12Greenback20, HD2_CabMicIr_4x12Greenback25, HD2_CabMicIr_4x12Greenback25WithPan, HD2_CabMicIr_4x12Greenback30, HD2_CabMicIr_4x12Greenback30WithPan, HD2_CabMicIr_4x12MOONT75WithPan, HD2_CabMicIr_4x121960AT75, HD2_CabMicIr_4x121960AT75WithPan, HD2_CabMicIr_4x12UberT75WithPan, HD2_CabMicIr_4x12UberV30, HD2_CabMicIr_4x12UberV30WithPan, HD2_CabMicIr_4x12WhoWatt100, HD2_CabMicIr_8x10SVTAV, HD2_CabMicIr_SoupProEllipse, HD2_Cab112_RsGtr, HD2_Cab2x12Interstate, HD2_Cab4X12CaliV30, HD2_Cab4x121960T75, HD2_Cab4x12Greenback20, HD2_Cab4x12Greenback25, HD2_Cab4x12WhoWatt100, HD2_Cab4x12UberT75
 
 `
     : `NOTE: This device does NOT have amp or cab models. Do NOT include any amp or cab blocks. The guitar signal goes directly to effects. Use the pedal/effects chain to shape the tone without amp simulation.\n\n`;
@@ -133,7 +133,7 @@ GATE: HD2_GateNoiseGate, HD2_GateHardGate, HD2_GateHorizonGate
 
 EQ: HD2_EQSimple3Band, HD2_EQGraphic10Band, HD2_EQParametric, HD2_EQLowCutHighCut, HD2_EQLowShelfHighShelf, HD2_EQSimpleTilt
 
-DELAY: HD2_DelaySimpleDelay, HD2_DL4DigDelay, HD2_DL4DigDelayWithMod, HD2_DL4TapeEchoStereo, HD2_DL4TubeEchoStereo, HD2_DL4AnalogDelayStereo, HD2_DelayBucketBrigade, HD2_DelayTransistorTape, HD2_DelayVintageDigitalV2, HD2_DelayAdriaticDelay, HD2_DelayElephantMan, HD2_DelayPingPong, HD2_DelayDualDelay, HD2_DelayCrissCross, HD2_DelayHarmonyDelay, HD2_DelayPitch, HD2_DelayReverseDelay, HD2_DelayMultiPass, HD2_DelayDuckedDelay, HD2_DelayCosmosEcho, VIC_DelayStutterEdit
+DELAY: HD2_DelaySimpleDelay, HD2_DL4DigDelay, HD2_DL4DigDelayWithMod, HD2_DL4TapeEchoStereo, HD2_DL4TubeEchoStereo, HD2_DL4AnalogDelayStereo, HD2_DelayBucketBrigade, HD2_DelayTransistorTape, HD2_DelayVintageDigitalV2, HD2_DelayAdriaticDelay, HD2_DelayElephantMan, HD2_DelayPingPong, HD2_DelayDualDelay, HD2_DelayDoubleDouble, HD2_DelayCrissCross, HD2_DelayHarmonyDelay, HD2_DelayModChorusEcho, HD2_DelayPitch, HD2_DelayReverseDelay, HD2_DelayMultiPass, HD2_DelayDuckedDelay, HD2_DelayCosmosEcho, VIC_DelayStutterEdit
 
 REVERB: HD2_ReverbRoom, HD2_ReverbHall, HD2_ReverbPlate, HD2_ReverbSpring, HD2_Reverb63Spring, HD2_ReverbHxSpring, HD2_ReverbChamber, HD2_ReverbTile, HD2_ReverbCave, HD2_ReverbGlitz, HD2_ReverbGanymede, HD2_ReverbOcto, HD2_ReverbPlateaux, HD2_ReverbNonLinear, HD2_ReverbParticle, HD2_ReverbSearchlights, HD2_ReverbDoubleTank, VIC_DynPlate, VIC_ReverbDynAmbience, VIC_ReverbDynBloom, VIC_ReverbDynRoom, VIC_ReverbRotating
 
@@ -169,21 +169,57 @@ You MUST respond with ONLY a valid JSON object — no markdown, no commentary, n
 SIGNAL CHAIN ORDER (strictly follow this left-to-right order):
   ${signalChain}
 
+PARAMETER NAMES — USE EXACTLY AS LISTED (do NOT invent param names):
+  HD2_DistMinotaur:           Gain, Tone, Level
+  HD2_DistScream808:          Gain, Tone, Level
+  HD2_DistHeirApparent:       Gain, Tone, Level, Presence, Clipping, GainMod, Voltage
+  HD2_DistKinkyBoost:         Drive, Boost, Bright
+  HD2_DistTeemah:             Gain, Bass, Treble, Clipping, Level
+  HD2_DistPillars:            Gain, Tone, Level, Mode
+  HD2_CompressorDeluxeComp:   Threshold, Ratio, Attack, Release, Knee, Mix, Level
+  HD2_CompressorLAStudioComp: PeakReduction, Gain, Emphasis, Mix, Level, Type
+  HD2_GateNoiseGate:          Threshold, Decay, Level
+  HD2_GateHardGate:           OpenThreshold, CloseThreshold, HoldTime, Decay, Level
+  HD2_EQSimple3Band:          LowGain, MidFreq, MidGain, HighGain, Level
+  HD2_EQParametric:           LowFreq, LowGain, LowQ, MidFreq, MidGain, MidQ, HighFreq, HighGain, HighQ, LowCut, HighCut, Level
+  HD2_EQGraphic10Band:        31p25Hz, 62p5Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz, Level
+  HD2_DelaySimpleDelay:       Time, Feedback, Mix, Level
+  HD2_DelayTransistorTape:    Time, Feedback, WowFlutter, Headroom, Mix, Level
+  HD2_DelayBucketBrigade:     Time, Feedback, Noise, Headroom, Mix, Level
+  HD2_ReverbRoom:             Decay, Predelay, Mix, LowCut, HighCut, Level
+  HD2_ReverbHall:             Decay, Predelay, Mix, LowCut, HighCut, Level
+  HD2_ReverbPlate:            Decay, Predelay, Mix, LowCut, HighCut, Level
+  HD2_Chorus70sChorus:        VibratoRate, VibratoDepth, ChorusIntensity, Mix, Level
+  HD2_PhaserScriptModPhase:   Rate, Mix, Level
+  HD2_AmpMatchstickCh1:       Ch1Drive (NOT Drive), Bass, Cut, Treble, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpMatchstickCh2:       Ch2Drive (NOT Drive), Tone, Cut, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpMatchstickJump:      Ch1Drive, Ch2Drive, Bass, Treble, Tone, Cut, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpBritTremBrt:         BrtDrive (NOT Drive), Bass, Mid, Treble, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpBritTremNrm:         NrmDrive (NOT Drive), Bass, Mid, Treble, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpBritPlexiJump:       BrtDrive, NrmDrive (NOT Drive), Bass, Mid, Treble, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpCaliIVLead:          LeadGain, LeadDrive (NOT Drive), Bass, Mid, Treble, Presence, ChVol, Master, Sag, Bias, BiasX, Ripple
+  HD2_AmpEssexA30:            Drive, Bass, Cut (NO Mid), Treble, Presence, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+  HD2_AmpJazzRivet120:        Drive, Bass, Mid, Treble, Presence, ChVol, Master, Bright (NO Sag/Hum/Bias)
+  HD2_AmpPVPanama:            Drive, Bass, Mid, Treble, Presence, Resonance, ChVol, Master, Sag, Hum, Bias, BiasX, Ripple
+
 PARAMETER SCALES — CRITICAL:
-  • Drive, Gain, Bass, Mid, Treble, Presence, Master, ChVol, Level, Mix, Tone, Sustain,
-    Attack, Release, Balance, Sag, Hum, Bias, Depth, Rate, Speed, Feedback, Sensitivity,
-    Volume, Pan, Amount, Clarity, Warmth, Wet, Dry:
+  • Gain, Tone, Boost, Drive, Bass, Mid, Treble, Presence, Master, ChVol, Level, Mix,
+    Sustain, Attack, Release, Balance, Sag, Hum, Bias, BiasX, Ripple, Sensitivity,
+    Depth, Rate, Speed, Feedback, Decay, Wet, Dry, Volume, Pan, Amount, Clarity,
+    Warmth, VibratoRate, VibratoDepth, ChorusIntensity, WowFlutter, Noise, Headroom,
+    Emphasis, Knee, GainMod, Voltage, Clipping:
     → ALWAYS 0.0 to 1.0 (NEVER negative, NEVER above 1.0)
     → Example: Level at 60% = 0.6  |  Gain at 70% = 0.7  |  Level is NEVER -10
 
-  • EQ frequency parameters (LowCut, HighCut, Freq, BassFreq, individual Hz bands):
+  • EQ frequency parameters (LowCut, HighCut, LowFreq, MidFreq, HighFreq, individual Hz bands):
     → In Hz, e.g. 100, 800, 4000
 
-  • EQ gain/boost/cut (Tilt, LowGain, MidGain, HighGain, individual band values in dB):
+  • EQ gain/boost/cut (LowGain, MidGain, HighGain, individual band values in dB):
     → In dB, e.g. -3.0, 0, +2.5
 
-  • Threshold: in dB, e.g. -48, -30
-  • Tempo/time: in ms or BPM as appropriate`;
+  • Threshold, OpenThreshold, CloseThreshold: in dB, e.g. -48, -30
+  • Time (delay): in ms, e.g. 350
+  • Predelay (reverb): in ms, e.g. 20`;
 }
 
 const SYSTEM_INSTRUCTION = buildSystemInstruction(DEFAULT_DEVICE);

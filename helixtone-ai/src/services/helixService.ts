@@ -29,10 +29,13 @@ function sortBlocks(blocks: HelixBlock[]): HelixBlock[] {
 // Parameters that are always 0.0–1.0 internally (displayed 0–10 in HX Edit).
 // Any AI-generated value outside this range for these params gets clamped.
 const UNIT_PARAMS = new Set([
-  "drive","gain","bass","mid","treble","presence","master","chvol","level",
+  "drive","ch1drive","ch2drive","nrmdrive","brtdrive","leadgain","leaddrive","drive 1","drive 2","drive trem",
+  "gain","bass","mid","treble","presence","master","chvol","level",
   "mix","tone","sustain","attack","release","balance","sag","hum","bias","biasx",
   "ripple","sensitivity","depth","rate","speed","feedback","decay","wet","dry",
   "volume","pan","balanceb","balancea","amount","headroom","clarity","warmth",
+  "resonance","boost","bright","emphasis","knee","gainmod","voltage","clipping",
+  "vibratorate","vibratodepth","chorusintensity","wowflutter","noise","cut",
 ]);
 
 function sanitizeParameters(
