@@ -137,7 +137,7 @@ export async function analyzeTone(
   device: DeviceConfig = DEFAULT_DEVICE,
   audioAnalysis?: AudioAnalysis
 ): Promise<TonePreset> {
-  let prompt = `RECREATE THIS TONE: "${request.query}"\n`;
+  let prompt = `RECREATE THIS TONE: "${request.query || "Match the provided audio reference"}"\n`;
   if (request.guitarType) prompt += `GUITAR: ${request.guitarType}\n`;
   if (request.hasExtraPedals) prompt += `EXTERNAL PEDALS: Yes — optimize the chain around them.\n`;
 

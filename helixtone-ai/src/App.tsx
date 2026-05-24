@@ -115,7 +115,7 @@ export default function App() {
   };
 
   const handleSubmit = async () => {
-    if (!query) return;
+    if (!query && !audioAnalysis) return;
     setLoading(true);
     setError(null);
     try {
@@ -402,10 +402,10 @@ export default function App() {
 
                     <button
                       onClick={handleSubmit}
-                      disabled={!query || loading}
+                      disabled={(!query && !audioAnalysis) || loading}
                       className="w-full h-14 bg-blue-500 hover:bg-blue-400 text-white font-bold tracking-[0.3em] text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      INITIALIZE SYNTHESIS
+                      MAKE THE TONE
                     </button>
                   </div>
                 </div>
