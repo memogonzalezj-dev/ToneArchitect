@@ -18,14 +18,16 @@ CONSTRAINTS:
 VALID MODEL IDs — USE EXACTLY AS WRITTEN:
 
 AMPS (Agoura_ prefix — Stadium-exclusive amp engine):
-Agoura_AmpUSLuxeBlack, Agoura_AmpWhoWatt103
+⚠️ ONLY use amps from this exact list — display names differ from internal IDs.
+Agoura_AmpUSLuxeBlack, Agoura_AmpWhoWatt103, Agoura_AmpGermanLead
 
 CABS (HD2_CabMicIr_ prefix + WithPan suffix — required on Stadium):
 HD2_CabMicIr_1x12USDeluxeWithPan, HD2_CabMicIr_2x12SilverBellWithPan,
 HD2_CabMicIr_2x12BlueBellWithPan, HD2_CabMicIr_4x12BritV30WithPan,
 HD2_CabMicIr_4x12CaliV30WithPan, HD2_CabMicIr_4x12Greenback25WithPan,
 HD2_CabMicIr_4x12WhoWatt100WithPan, HD2_CabMicIr_2x12DoubleC12NWithPan,
-HD2_CabMicIr_2x12JazzRivetWithPan, HD2_CabMicIr_4x12BlackbackH30WithPan
+HD2_CabMicIr_2x12JazzRivetWithPan, HD2_CabMicIr_4x12BlackbackH30WithPan,
+HD2_CabMicIr_4x12UberV30WithPan
 
 DISTORTION/DRIVE (HD2_ + Mono suffix):
 HD2_DistMinotaurMono, HD2_DistScream808Mono, HD2_DistTeemahMono,
@@ -34,10 +36,12 @@ HD2_DistTriangleFuzzMono, HD2_DistRamsHeadMono, HD2_DistToneSovereignMono,
 HD2_DistValveDriverMono, HD2_DistPrizeDriveMono, HD2_DistDeezOneMono,
 HD2_DistStuporODMono, HD2_DistHedgehogD9Mono, HD2_DistArbitratorFuzzMono
 
-DYNAMICS/COMPRESSORS (HD2_ + Mono suffix):
+DYNAMICS/COMPRESSORS/GATES (HD2_ + Mono, or HX2_ + Mono):
 HD2_CompressorLAStudioCompMono, HD2_CompressorDeluxeCompMono,
 HD2_CompressorOptoCompMono, HD2_CompressorRedSqueezeMono,
-HD2_CompressorKinkyCompMono, HD2_GateNoiseGateMono, HD2_GateHorizonGateMono
+HD2_CompressorKinkyCompMono,
+HD2_GateNoiseGateMono, HD2_GateHardGateMono,
+HX2_GateHorizonGateMono
 
 EQ (HX2_ prefix — Stadium-exclusive):
 HX2_EQParametricMono, HX2_EQGraphicMono, HX2_EQSimple3BandMono
