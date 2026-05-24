@@ -42,7 +42,7 @@ export const DEVICES: DeviceConfig[] = [
     inputModel:      "",              // not applicable to .hsp format
     outputMainModel: "",
     outputSendModel: "",
-    available:       true,
+    available:       false,   // Coming Soon — need more confirmed .hsp exports to validate model catalog
   },
 
   // ── Full Helix floor units (.hlx, dual DSP, HD2_ models) ────────────────

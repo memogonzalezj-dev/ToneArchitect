@@ -28,6 +28,8 @@ const FS_SOURCE_BASE = 16843008;               // first footswitch source ID
 
 // ── Block type routing ────────────────────────────────────────────────────────
 const PRE_AMP_TYPES  = new Set(["dynamics", "wah", "filter", "pitch", "distortion"]);
+// Delay and reverb blocks carry a "Trails" param in their harness section
+const TRAILS_TYPES   = new Set(["delay", "reverb"]);
 
 // ── Param helpers ─────────────────────────────────────────────────────────────
 type HspValue    = { value: number | boolean | string };
@@ -70,6 +72,7 @@ function makeFxBlock(
   block:       HelixBlock,
   sourceIndex: number,
 ): Record<string, unknown> {
+  const hasTrails = TRAILS_TYPES.has(block.type.toLowerCase());
   return {
     "@enabled": {
       value: true,
@@ -93,6 +96,7 @@ function makeFxBlock(
       "@enabled": { value: true },
       params: {
         EvtIdx: { value: -1 },
+        ...(hasTrails ? { Trails: { value: true } } : {}),
         bypass: { value: false },
         upper:  { value: true },
       },
