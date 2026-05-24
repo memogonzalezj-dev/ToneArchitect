@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npm --prefix helixtone-ai install && npm --prefix helixtone-ai run build -- --outDir ../dist",
     "electron:dev": "concurrently \"npm --prefix helixtone-ai run dev\" \"wait-on -t 15000 http://127.0.0.1:5173 && electron .\"",
-    "dist:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac dmg",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
     "dist:mas": "npm run build && electron-builder --mac mas"
   },
   "devDependencies": {
@@ -30,9 +30,7 @@
       "dist/**/*",
       "package.json"
     ],
-    "extraResources": [
-      { "from": "resources/bin", "to": "bin", "filter": ["**/*"] }
-    ],
+    "extraResources": [],
     "asarUnpack": ["**/node_modules/ffmpeg-static/**"],
     "mac": {
       "category": "public.app-category.music",
@@ -42,10 +40,14 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "minimumSystemVersion": "12.0",
-      "target": [{ "target": "dmg", "arch": ["arm64"] }]
+      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "identity": "Guillermo Gonzalez Jimenez (7H65YB49C7)",
+      "preAutoEntitlements": false,
+      "notarize": {
+        "teamId": "7H65YB49C7"
+      }
     },
     "dmg": {
-      "sign": false,
       "contents": [
         {
           "x": 130,

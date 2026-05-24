@@ -39,7 +39,7 @@ Runs 100% locally via local Llama 3.1 8B + Apple Metal. No cloud. No subscriptio
 | Model path | `~/Library/Application Support/tone-architect/models/llama3.1-8b.gguf` |
 | IPC bridge | `electron/preload.js` contextBridge |
 | Feedback | Google Sheets via Apps Script POST |
-| Distribution | Unsigned DMG + `install.sh` one-liner |
+| Distribution | Signed DMG (Developer ID) + Homebrew cask + `install.sh` |
 
 ---
 
@@ -61,7 +61,11 @@ ToneAI/
 │   └── services/
 │       ├── llamaService.ts  # Prompt builder, analyzeTone(), block hard cap
 │       └── helixService.ts  # HLX JSON generator, downloadPreset()
-├── install.sh               # One-command installer (handles Gatekeeper quarantine)
+├── build/
+│   ├── entitlements.mac.plist   # Developer ID entitlements (NO sandbox — that's MAS only)
+│   └── entitlements.mas.plist   # Mac App Store entitlements
+├── build-signed.sh          # Local signing script — in .gitignore, never commit
+├── install.sh               # One-command installer
 ├── MEMORY.md                # ← this file
 └── package.json             # version, build config, scripts
 ```
@@ -79,16 +83,10 @@ git checkout -b session/vX.X.X-feature-name
 git fetch origin main && git merge origin/main --no-edit
 
 # Push (SSH only works in user's terminal, not Claude's bash):
-git push origin <branch>
-
-# Merge to main directly for small fixes (skip PR):
-git checkout main && git pull origin main
-git checkout <feature-branch> -- <file>
-git add <file> && git commit -m "..." && git push origin main
-git checkout <feature-branch>
+TOKEN=$(gh auth token) && git push https://memogonzalezj-dev:${TOKEN}@github.com/memogonzalezj-dev/ToneArchitect.git <branch>
 ```
 
-**Note:** SSH key only works in the user's terminal. Claude cannot push/pull.
+**Note:** SSH key only works in the user's terminal. Use HTTPS + gh auth token in Claude's bash.
 
 ---
 
@@ -117,9 +115,74 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ---
 
+## Apple Developer ID Signing
+
+- **Certificate:** `Developer ID Application: Guillermo Gonzalez Jimenez (7H65YB49C7)`
+- **Team ID:** `7H65YB49C7`
+- **Build script:** `build-signed.sh` (in .gitignore — contains credentials)
+- **Entitlements:** `build/entitlements.mac.plist` — JIT + unsigned memory + network. NO app-sandbox (that's MAS only — having it caused notarization to hang for hours)
+
+### Notarization Status (2026-05-24) — PENDING
+All 4 submissions are stuck "In Progress" on Apple's servers. Likely queue throttling from multiple concurrent submissions. The latest clean build is:
+- **Submission ID:** `77a614bc-8212-4fa1-bbdb-dfbfeeb8ce0b`
+- **Created:** `2026-05-24T16:04:11Z`
+- **What's in it:** signed app WITHOUT yt-dlp (moved to runtime download), correct entitlements
+
+### First thing next session:
+```bash
+xcrun notarytool history \
+  --apple-id memogonzj@icloud.com \
+  --password <new-app-specific-password> \
+  --team-id 7H65YB49C7
+```
+
+If `77a614bc` shows `Accepted`:
+```bash
+xcrun stapler staple "/Users/memo/ToneAI/dist_desktop/mac-arm64/Tone Architect.app"
+# Then rebuild DMG from stapled app:
+bash /Users/memo/ToneAI/build-signed.sh
+```
+
+If `Invalid` → fetch the log and fix what Apple flagged:
+```bash
+xcrun notarytool log 77a614bc-8212-4fa1-bbdb-dfbfeeb8ce0b \
+  --apple-id memogonzj@icloud.com \
+  --password <new-app-specific-password> \
+  --team-id 7H65YB49C7
+```
+
+### ⚠️ Rotate app-specific password
+The old password `qgbq-uhiw-sokv-aczk` was exposed in this session. Revoke it at appleid.apple.com → App-Specific Passwords and update `build-signed.sh`.
+
+---
+
+## yt-dlp — Runtime Download (changed this session)
+
+yt-dlp was removed from the app bundle to avoid Apple notarization policy issues. It now downloads at runtime on first YouTube use:
+- **Download URL:** `https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos`
+- **Install path:** `~/Library/Application Support/tone-architect/bin/yt-dlp`
+- **Code:** `ensureYtdlp()` function in `electron/main.js`
+- `package.json` `extraResources` is now empty `[]`
+
+---
+
+## Homebrew Tap
+
+- **Tap repo:** `https://github.com/memogonzalezj-dev/homebrew-tap`
+- **Cask:** `Casks/tone-architect.rb`
+- **Install command:**
+  ```bash
+  brew install --cask memogonzalezj-dev/tap/tone-architect
+  ```
+- **Status:** Live — but cask has `postflight` quarantine xattr hack. Once notarization is done, remove the `postflight` block (signed app won't need it)
+- **On each new release:** update `version` and `sha256` in `Casks/tone-architect.rb`
+  - Get SHA256: `shasum -a 256 "dist_desktop/Tone Architect-X.X.X-arm64.dmg"`
+
+---
+
 ## Latest Release
 
-- **DMG:** `dist_desktop/Tone Architect-1.1.0-arm64.dmg`
+- **DMG:** `dist_desktop/Tone Architect-1.1.0-arm64.dmg` (unsigned — pending notarization)
 - **GitHub Release:** `https://github.com/memogonzalezj-dev/ToneArchitect/releases/tag/v1.1.0`
 - **Install command:**
   ```bash
@@ -128,48 +191,22 @@ To unlock XL/One: need actual `.hlx` file exported from that device to confirm `
 
 ---
 
-## Last Session Work (2026-05-24)
+## Next Session — Do This First
 
-### Completed — v1.1.0 DMG built + published
-- **Button renamed**: "INITIALIZE SYNTHESIS" → "MAKE THE TONE"
-- **Button enabled on audio-only**: `disabled` guard + `handleSubmit` early-return both changed from `!query` → `!query && !audioAnalysis`
-- **Empty query fallback** in `llamaService.ts`: prompt uses `"Match the provided audio reference"` when text field is blank
-- **DMG built**: `npm run dist:mac` → `dist_desktop/Tone Architect-1.1.0-arm64.dmg` (210 MB)
-- **GitHub Release updated**: new DMG uploaded to existing v1.1.0 release via `gh release upload --clobber`
-- **Git note**: all commits landed directly on `main` this session (no feature branch). Next session: always `git checkout -b session/vX.X.X-feature` at the start.
-
-### Known Issues
-- HX Stomp XL and HX One still `available: false` — need real `.hlx` files to confirm device IDs
-- Apple Developer ID not purchased yet ($99) — app is unsigned, install.sh handles quarantine
-
----
-
-## Homebrew Tap (in progress)
-
-- **Tap repo:** `https://github.com/memogonzalezj-dev/homebrew-tap`
-- **Cask:** `Casks/tone-architect.rb`
-- **Install command:**
-  ```bash
-  brew install --cask memogonzalezj-dev/tap/tone-architect
-  ```
-- **Status:** Live and working — `brew info --cask tone-architect` resolves correctly
-- **On each new release:** update `version` and `sha256` in `Casks/tone-architect.rb`
-  - Get SHA256: `shasum -a 256 "dist_desktop/Tone Architect-X.X.X-arm64.dmg"`
+1. Rotate app-specific password at appleid.apple.com
+2. Check notarization status (see Apple Developer ID section above)
+3. If accepted: staple + rebuild DMG + update GitHub Release + update Homebrew cask
+4. Remove `postflight` xattr block from Homebrew cask once signed DMG is live
 
 ---
 
 ## Next Session Ideas
 
-- **Finish Homebrew cask**: add tap install to README, post to Reddit with brew command instead of curl
-- **Test audio analysis end-to-end**: upload a file + YouTube URL, verify descriptor shows in badge and affects preset
-- **HX Stomp XL / HX One support**: need a real `.hlx` export from each device to confirm `device_id`
-- **Audio analysis tuning**: collect beta feedback on whether audio reference improves preset quality
+- **Finish signing + notarization** — see above
+- **Update Homebrew cask** with signed DMG (remove postflight quarantine hack)
+- **Test yt-dlp runtime download** — verify YouTube feature still works after moving to runtime download
+- **HX Stomp XL / HX One support**: need a real `.hlx` export from each device
 - **v1.2.0 ideas**: preset history/favorites, tone-matching score display, custom IR cab support
-
-### Start command for next session
-```bash
-cd /Users/memo/ToneAI && git checkout main && git pull origin main
-```
 
 ---
 
