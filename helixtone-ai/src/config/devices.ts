@@ -23,6 +23,60 @@ export interface DeviceConfig {
 }
 
 export const DEVICES: DeviceConfig[] = [
+  // ── Full Helix floor units (dual DSP, HD2_ models) ──────────────────────
+  {
+    // Verified from real Floor export: helix_example_Floor.hlx (Disintegrated Chime)
+    id:              "helix_floor",
+    label:           "Helix Floor",
+    deviceId:        2162689,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,        // dsp1 join @position 8 confirmed in real export
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         true,
+    inputModel:      "HD2_AppDSPFlow1Input",
+    inputModelB:     "HD2_AppDSPFlow2Input",
+    outputMainModel: "HD2_AppDSPFlowOutput",
+    outputSendModel: "HD2_AppDSPFlowOutput",
+    available:       true,
+  },
+  {
+    // Verified from real LT export: Black_Album_Thrash_LT.hlx
+    id:              "helix_lt",
+    label:           "Helix LT",
+    deviceId:        2162692,
+    deviceVersion:   58720256,
+    appVersion:      58720256,
+    maxBlocks:       8,
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         true,
+    inputModel:      "HD2_AppDSPFlow1Input",
+    inputModelB:     "HD2_AppDSPFlow2Input",
+    outputMainModel: "HD2_AppDSPFlowOutput",
+    outputSendModel: "HD2_AppDSPFlowOutput",
+    available:       true,
+  },
+  {
+    // TODO: need a real .hlx export from a Helix Stadium to confirm device ID
+    id:              "helix_stadium",
+    label:           "Helix Stadium",
+    deviceId:        0,
+    deviceVersion:   0,
+    appVersion:      0,
+    maxBlocks:       8,
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         true,
+    inputModel:      "HD2_AppDSPFlow1Input",
+    inputModelB:     "HD2_AppDSPFlow2Input",
+    outputMainModel: "HD2_AppDSPFlowOutput",
+    outputSendModel: "HD2_AppDSPFlowOutput",
+    available:       false,
+  },
+
+  // ── HX compact units (single DSP) ───────────────────────────────────────
   {
     id:              "hx_stomp",
     label:           "HX Stomp",
@@ -39,67 +93,20 @@ export const DEVICES: DeviceConfig[] = [
     available:       true,
   },
   {
-    id:              "hx_effects",
-    label:           "HX Effects",
-    deviceId:        2162693,
-    deviceVersion:   40960000,
-    appVersion:      40960000,
-    maxBlocks:       9,
-    snapshotCount:   4,
-    hasAmpCab:       false,
-    dualDsp:         false,
-    inputModel:      "HelixFx_AppDSPFlowInput",
-    outputMainModel: "HelixFx_AppDSPFlowOutput",
-    outputSendModel: "HelixFx_AppDSPFlowOutput",
-    available:       true,
-  },
-  {
-    // Verified from real LT export: Black_Album_Thrash_LT.hlx
-    id:              "helix_lt",
-    label:           "Helix LT",
-    deviceId:        2162692,
-    deviceVersion:   58720256,
-    appVersion:      58720256,
-    maxBlocks:       8,       // Blocks placed in dsp0; dsp1 left as empty valid chain
-    snapshotCount:   8,
-    hasAmpCab:       true,
-    dualDsp:         true,
-    inputModel:      "HD2_AppDSPFlow1Input",
-    inputModelB:     "HD2_AppDSPFlow2Input",
-    outputMainModel: "HD2_AppDSPFlowOutput",
-    outputSendModel: "HD2_AppDSPFlowOutput",
-    available:       true,
-  },
-  {
     // Verified from real XL export: helix_example_StompXL.hlx (Texas Flood & Cold Shot)
     id:              "hx_stomp_xl",
     label:           "HX Stomp XL",
     deviceId:        2162699,
     deviceVersion:   58720256,
     appVersion:      58720256,
-    maxBlocks:       8,        // join @position 8 confirmed in real export
+    maxBlocks:       8,
     snapshotCount:   4,
     hasAmpCab:       true,
-    dualDsp:         false,    // dsp1 is {} in XL presets — single DSP
-    inputModel:      "HelixStomp_AppDSPFlowInput",
-    outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
-    outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
-    available:       true,
-  },
-  {
-    id:              "hx_one",
-    label:           "HX One",
-    deviceId:        0,          // TODO: export any preset from HX One and read data.device
-    deviceVersion:   0,
-    appVersion:      0,
-    maxBlocks:       1,
-    snapshotCount:   1,
-    hasAmpCab:       false,
     dualDsp:         false,
     inputModel:      "HelixStomp_AppDSPFlowInput",
     outputMainModel: "HelixStomp_AppDSPFlowOutputMain",
     outputSendModel: "HelixStomp_AppDSPFlowOutputSend",
-    available:       false,
+    available:       true,
   },
 ];
 
