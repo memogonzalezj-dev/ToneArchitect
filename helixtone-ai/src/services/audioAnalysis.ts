@@ -97,7 +97,8 @@ function envelopeFeatures(pcm: Float32Array, sampleRate: number) {
     for (let j = 0; j < hopSize; j++) sumSq += pcm[i + j] ** 2;
     envelope.push(Math.sqrt(sumSq / hopSize));
   }
-  const peak = Math.max(...envelope, 1e-9);
+  let peak = 1e-9;
+  for (let i = 0; i < envelope.length; i++) if (envelope[i] > peak) peak = envelope[i];
   const norm = envelope.map((v) => v / peak);
   const tail = norm.slice(Math.floor(norm.length * 0.5));
   const tailMean = tail.reduce((a, b) => a + b, 0) / (tail.length || 1);
@@ -114,9 +115,14 @@ function envelopeFeatures(pcm: Float32Array, sampleRate: number) {
 }
 
 function compressionEstimate(pcm: Float32Array): number {
-  const abs = Array.from(pcm).map(Math.abs);
-  const peak = Math.max(...abs, 1e-9);
-  const rms  = Math.sqrt(abs.reduce((a, v) => a + v * v, 0) / abs.length);
+  let peak = 1e-9;
+  let sumSq = 0;
+  for (let i = 0; i < pcm.length; i++) {
+    const a = Math.abs(pcm[i]);
+    if (a > peak) peak = a;
+    sumSq += a * a;
+  }
+  const rms = Math.sqrt(sumSq / pcm.length);
   const crest = peak / (rms || 1e-9);
   return Math.max(0, Math.min(1, 1 - (crest - 1) / 15));
 }
