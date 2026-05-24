@@ -6,28 +6,51 @@
 //   3. Add an entry below
 
 export interface DeviceConfig {
-  id:                string;   // Internal key
-  label:             string;   // Display name in UI
-  deviceId:          number;   // data.device in HLX JSON
-  deviceVersion:     number;   // data.device_version in HLX JSON
-  appVersion:        number;   // data.meta.appversion in HLX JSON
-  maxBlocks:         number;   // DSP block hard limit (per dsp0 for dual-DSP devices)
-  snapshotCount:     number;   // How many snapshots to write
-  hasAmpCab:         boolean;  // Whether amp/cab blocks are supported
-  dualDsp:           boolean;  // Whether device has two DSP chips (Helix LT/Floor/etc.)
-  inputModel:        string;   // @model for inputA
-  inputModelB?:      string;   // @model for inputB (if different from inputA)
-  outputMainModel:   string;   // @model for outputA
-  outputSendModel:   string;   // @model for outputB
-  available:         boolean;  // false = "Coming Soon" in dropdown
+  id:                string;          // Internal key
+  label:             string;          // Display name in UI
+  fileFormat:        'hlx' | 'hsp';  // Output file format (.hlx = Helix, .hsp = Stadium)
+  deviceId:          number;          // data.device / meta.device_id in output JSON
+  deviceVersion:     number;          // data.device_version / meta.device_version
+  appVersion:        number;          // data.meta.appversion (hlx only)
+  maxBlocks:         number;          // DSP block hard limit (AI-visible cap)
+  snapshotCount:     number;          // How many snapshots to write
+  hasAmpCab:         boolean;         // Whether amp/cab blocks are supported
+  dualDsp:           boolean;         // Whether device has two DSP chips (hlx only)
+  inputModel:        string;          // @model for inputA (hlx only)
+  inputModelB?:      string;          // @model for inputB if different from inputA (hlx only)
+  outputMainModel:   string;          // @model for outputA (hlx only)
+  outputSendModel:   string;          // @model for outputB (hlx only)
+  available:         boolean;         // false = "Coming Soon" in dropdown
 }
 
 export const DEVICES: DeviceConfig[] = [
-  // ── Full Helix floor units (dual DSP, HD2_ models) ──────────────────────
+  // ── Helix Stadium (.hsp format — next-gen platform) ─────────────────────
+  {
+    // Verified from two real .hsp exports. device_id and device_version confirmed.
+    // File format is .hsp (not .hlx) with completely different schema —
+    // uses Agoura_ amp models, HX2_ EQ, HD2_*Mono/Stereo effects, P35_ I/O.
+    id:              "helix_stadium",
+    label:           "Helix Stadium",
+    fileFormat:      "hsp",
+    deviceId:        2490368,
+    deviceVersion:   302056738,
+    appVersion:      0,               // not used in .hsp format
+    maxBlocks:       9,               // 4 pre-amp + amp + cab + 3 post-amp = 9 typical
+    snapshotCount:   8,
+    hasAmpCab:       true,
+    dualDsp:         false,           // not applicable to .hsp format
+    inputModel:      "",              // not applicable to .hsp format
+    outputMainModel: "",
+    outputSendModel: "",
+    available:       true,
+  },
+
+  // ── Full Helix floor units (.hlx, dual DSP, HD2_ models) ────────────────
   {
     // Verified from real Floor export: helix_example_Floor.hlx (Disintegrated Chime)
     id:              "helix_floor",
     label:           "Helix Floor",
+    fileFormat:      "hlx",
     deviceId:        2162689,
     deviceVersion:   58720256,
     appVersion:      58720256,
@@ -45,6 +68,7 @@ export const DEVICES: DeviceConfig[] = [
     // Verified from real LT export: Black_Album_Thrash_LT.hlx
     id:              "helix_lt",
     label:           "Helix LT",
+    fileFormat:      "hlx",
     deviceId:        2162692,
     deviceVersion:   58720256,
     appVersion:      58720256,
@@ -68,10 +92,11 @@ export const DEVICES: DeviceConfig[] = [
   //    Supporting Stadium requires a new generator — this is v2.0 scope.
   //    Do NOT enable until stadiumService.ts is built and tested.
 
-  // ── HX compact units (single DSP) ───────────────────────────────────────
+  // ── HX compact units (.hlx, single DSP) ────────────────────────────────
   {
     id:              "hx_stomp",
     label:           "HX Stomp",
+    fileFormat:      "hlx",
     deviceId:        2162694,
     deviceVersion:   58720256,
     appVersion:      58851328,
@@ -88,6 +113,7 @@ export const DEVICES: DeviceConfig[] = [
     // Verified from real XL export: helix_example_StompXL.hlx (Texas Flood & Cold Shot)
     id:              "hx_stomp_xl",
     label:           "HX Stomp XL",
+    fileFormat:      "hlx",
     deviceId:        2162699,
     deviceVersion:   58720256,
     appVersion:      58720256,

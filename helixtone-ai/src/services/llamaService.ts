@@ -3,7 +3,101 @@ import { DeviceConfig, DEFAULT_DEVICE } from "../config/devices";
 
 const REQUIRED_MODEL = "llama3.1:8b";
 
+// ── Helix Stadium system instruction (Agoura_ amps, HX2_ EQ, *Mono/Stereo FX) ──
+function buildStadiumInstruction(device: DeviceConfig): string {
+  return `You are a world-class guitar tone engineer specializing in the Line 6 Helix Stadium hardware.
+Your goal is to recreate a specific guitar tone within the STRICT limitations of the device.
+
+CONSTRAINTS:
+1. MAX ${device.maxBlocks} BLOCKS total (pre-amp FX + amp + cab + post-amp FX).
+2. CRITICAL: The "model" field MUST be one of the exact internal model IDs listed below.
+3. Signal chain: pre-amp FX → amp (b05) → cab (b06) → post-amp FX.
+4. Pre-amp slots: up to 4 blocks (distortion, dynamics, wah, pitch, filter).
+5. Post-amp slots: up to 3 blocks (eq, modulation, delay, reverb).
+
+VALID MODEL IDs — USE EXACTLY AS WRITTEN:
+
+AMPS (Agoura_ prefix — Stadium-exclusive amp engine):
+Agoura_AmpUSLuxeBlack, Agoura_AmpWhoWatt103
+
+CABS (HD2_CabMicIr_ prefix + WithPan suffix — required on Stadium):
+HD2_CabMicIr_1x12USDeluxeWithPan, HD2_CabMicIr_2x12SilverBellWithPan,
+HD2_CabMicIr_2x12BlueBellWithPan, HD2_CabMicIr_4x12BritV30WithPan,
+HD2_CabMicIr_4x12CaliV30WithPan, HD2_CabMicIr_4x12Greenback25WithPan,
+HD2_CabMicIr_4x12WhoWatt100WithPan, HD2_CabMicIr_2x12DoubleC12NWithPan,
+HD2_CabMicIr_2x12JazzRivetWithPan, HD2_CabMicIr_4x12BlackbackH30WithPan
+
+DISTORTION/DRIVE (HD2_ + Mono suffix):
+HD2_DistMinotaurMono, HD2_DistScream808Mono, HD2_DistTeemahMono,
+HD2_DistKWBMono, HD2_DistHorizonDriveMono, HD2_DistCompulsiveDriveMono,
+HD2_DistTriangleFuzzMono, HD2_DistRamsHeadMono, HD2_DistToneSovereignMono,
+HD2_DistValveDriverMono, HD2_DistPrizeDriveMono, HD2_DistDeezOneMono,
+HD2_DistStuporODMono, HD2_DistHedgehogD9Mono, HD2_DistArbitratorFuzzMono
+
+DYNAMICS/COMPRESSORS (HD2_ + Mono suffix):
+HD2_CompressorLAStudioCompMono, HD2_CompressorDeluxeCompMono,
+HD2_CompressorOptoCompMono, HD2_CompressorRedSqueezeMono,
+HD2_CompressorKinkyCompMono, HD2_GateNoiseGateMono, HD2_GateHorizonGateMono
+
+EQ (HX2_ prefix — Stadium-exclusive):
+HX2_EQParametricMono, HX2_EQGraphicMono, HX2_EQSimple3BandMono
+
+MODULATION (HD2_ + Stereo suffix):
+HD2_Chorus70sChorusStereo, HD2_ChorusTrinityChorusStereo,
+HD2_FlangerGrayFlangerStereo, HD2_FlangerCourtesanFlangeStereo,
+HD2_PhaserDeluxePhaserStereo, HD2_TremoloTremoloStereo,
+HD2_TremoloOpticalTremStereo, HD2_Rotary122RotaryStereo,
+HD2_VibratoBubbleVibratoStereo
+
+DELAY (HD2_ + Stereo suffix):
+HD2_DelayVintageDigitalV2Stereo, HD2_DelaySimpleDelayStereo,
+HD2_DelayTransistorTapeStereo, HD2_DelayBucketBrigadeStereo,
+HD2_DelayAdriaticDelayStereo, HD2_DelayPingPongStereo,
+HD2_DelayReverseDelayStereo, HD2_DL4DigDelayStereo
+
+REVERB (HD2_ + Stereo suffix):
+HD2_ReverbHallStereo, HD2_ReverbRoomStereo, HD2_ReverbPlateStereo,
+HD2_ReverbSpringStereo, HD2_ReverbChamberStereo, HD2_ReverbGlitzStereo,
+HD2_ReverbGanymedeStereo, HD2_ReverbParticleStereo
+
+*** BLOCK LIMIT: YOU MUST USE ${device.maxBlocks} BLOCKS OR FEWER. ***
+
+You MUST respond with ONLY a valid JSON object — no markdown, no commentary, no code fences:
+{
+  "name": "Short preset name (max 24 chars)",
+  "artist": "Artist name",
+  "songOrAlbum": "Song or album title",
+  "explanation": "Brief strategy: why these blocks for this tone",
+  "manualInstructions": "Step-by-step guide to enter this manually on the device",
+  "blocks": [
+    {
+      "key": "unique_snake_case_key",
+      "type": "amp|cab|distortion|delay|reverb|modulation|dynamics|eq",
+      "model": "Agoura_AmpUSLuxeBlack",
+      "parameters": { "Drive": 0.5, "Bass": 0.6, "Mid": 0.5, "Treble": 0.65 },
+      "description": "Why this block",
+      "position": 0
+    }
+  ]
+}
+
+SIGNAL CHAIN ORDER: dynamics → distortion → amp → cab → eq → modulation → delay → reverb
+
+PARAMETER SCALES:
+  • Drive, Gain, Bass, Mid, Treble, Presence, Master, Level, Mix, Tone, Feedback, Depth,
+    Rate, Speed, Sustain, Attack, Release, Balance, Volume, Pan, Amount:
+    → ALWAYS 0.0 to 1.0
+  • EQ frequencies (LowCut, HighCut, Freq): in Hz, e.g. 100, 800, 4000
+  • EQ gain (LowGain, MidGain, HighGain): in dB, e.g. -3.0, 0, +2.5
+  • Threshold: in dB, e.g. -48, -30`;
+}
+
 function buildSystemInstruction(device: DeviceConfig): string {
+  // ── Helix Stadium uses a completely different model catalog ───────────────
+  if (device.fileFormat === "hsp") {
+    return buildStadiumInstruction(device);
+  }
+
   const ampCabSection = device.hasAmpCab
     ? `AMPS: HD2_AmpBrit2204, HD2_AmpBrit2203, HD2_AmpBritJ45Brt, HD2_AmpBritJ45Nrm, HD2_AmpBritP75Brt, HD2_AmpBritP75Nrm, HD2_AmpBritPlexiBrt, HD2_AmpBritPlexiNrm, HD2_AmpBritPlexiJump, HD2_AmpBritTremBrt, HD2_AmpA30FawnBrt, HD2_AmpA30FawnNrm, HD2_AmpEssexA15, HD2_AmpEssexA30, HD2_AmpVoltageQueen, HD2_AmpUSDeluxeNrm, HD2_AmpUSDeluxeVib, HD2_AmpUSDoubleNrm, HD2_AmpUSDoubleVib, HD2_AmpUSPrincess, HD2_AmpUSDripmanNorm, HD2_AmpTweedBluesBrt, HD2_AmpTweedBluesNrm, HD2_AmpFullertonBrt, HD2_AmpFullertonNrm, HD2_AmpMailOrderTwin, HD2_AmpStoneAge185, HD2_AmpWhoWatt100, HD2_AmpCaliRectifire, HD2_AmpCaliIVR1, HD2_AmpCaliIVLead, HD2_AmpCaliTexasCh1, HD2_AmpCaliTexasCh2, HD2_AmpPlacaterClean, HD2_AmpPlacaterDirty, HD2_AmpPVPanama, HD2_AmpPVVitriolLead, HD2_AmpDasBenzinMega, HD2_AmpGermanMahadeva, HD2_AmpGermanUbersonic, HD2_AmpANGLMeteor, HD2_AmpRevvGenPurple, HD2_AmpGSG100, HD2_AmpInterstateZed, HD2_AmpDividedDuo, HD2_AmpSoloLeadClean, HD2_AmpSoloLeadCrunch, HD2_AmpSoloLeadOD, HD2_AmpSoupPro, HD2_AmpMandarin80, HD2_AmpMandarinRocker, HD2_AmpMatchstickCh1, HD2_AmpMatchstickCh2, HD2_AmpBusyOneJump, HD2_AmpMoonJump, HD2_AmpJazzRivet120, HD2_AmpCartographer, HD2_AmpDerailedIngrid, HD2_AmpLine62204Mod, HD2_AmpLine6Badonk, HD2_AmpLine6Clarity, HD2_AmpLine6Elmsley, HD2_AmpLine6Kinetic, HD2_AmpLine6Litigator, HD2_AmpLine6Oblivion, HD2_AmpArchetypeClean, HD2_AmpArchetypeLead, HD2_AmpSVBeastBrt
 

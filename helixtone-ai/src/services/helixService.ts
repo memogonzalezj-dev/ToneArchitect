@@ -1,5 +1,6 @@
 import { TonePreset, HelixBlock } from "../types";
 import { DeviceConfig, DEFAULT_DEVICE } from "../config/devices";
+import { downloadStadiumPreset } from "./stadiumService";
 
 // Correct signal chain order: pre-fx → amp → cab → post-fx
 const BLOCK_TYPE_ORDER: Record<string, number> = {
@@ -327,6 +328,11 @@ export function generateHlxJson(preset: TonePreset, device: DeviceConfig = DEFAU
 }
 
 export async function downloadPreset(preset: TonePreset, device: DeviceConfig = DEFAULT_DEVICE): Promise<void> {
+  // Route to the correct generator based on file format
+  if (device.fileFormat === "hsp") {
+    return downloadStadiumPreset(preset, device);
+  }
+
   const filename = `${preset.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_-]/g, "")}.hlx`;
   const content  = generateHlxJson(preset, device);
 
