@@ -46,10 +46,7 @@
       "minimumSystemVersion": "12.0",
       "target": [{ "target": "dmg", "arch": ["arm64"] }],
       "identity": "Guillermo Gonzalez Jimenez (7H65YB49C7)",
-      "preAutoEntitlements": false,
-      "notarize": {
-        "teamId": "7H65YB49C7"
-      }
+      "preAutoEntitlements": false
     },
     "dmg": {
       "contents": [

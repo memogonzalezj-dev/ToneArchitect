@@ -1,13 +1,14 @@
 /**
- * afterSign.js — electron-builder hook, called after the app is code-signed
+ * afterSign.js — electron-builder hook, called after the app is signed
  * but BEFORE the DMG is assembled.
  *
- * Purpose: electron-builder's --deep pass misses native binaries inside
- * app.asar.unpacked and bundled third-party executables. This hook re-signs
- * every native binary individually (inside-out order) with:
- *   --options runtime  (hardened runtime — required for notarization)
- *   --timestamp        (secure timestamp — required for notarization)
- *   --force            (overwrite any prior signature)
+ * Scope: electron-builder's codesign --deep pass handles all frameworks and
+ * helper apps. This hook ONLY supplements it for files that --deep cannot
+ * reach reliably: native binaries in app.asar.unpacked/ and stand-alone
+ * executables in Contents/Resources/bin/.
+ *
+ * Do NOT re-sign anything electron-builder already handled — doing so after
+ * the fact breaks the outer bundle's CodeResources digest.
  */
 
 const { execSync } = require("child_process");
@@ -23,18 +24,17 @@ exports.default = async function afterSign(context) {
     "Developer ID Application: Guillermo Gonzalez Jimenez (7H65YB49C7)";
   const entitlements = path.resolve(__dirname, "../build/entitlements.mac.plist");
 
-  console.log(`\n[afterSign] Re-signing native binaries in:\n  ${appPath}\n`);
+  console.log(`\n[afterSign] Signing supplemental native binaries in:\n  ${appPath}\n`);
 
-  function sign(filePath, useEntitlements = false) {
-    const entFlag = useEntitlements
-      ? `--entitlements "${entitlements}"`
-      : "";
-    const cmd = `codesign --force --options runtime --timestamp ${entFlag} --sign "${identity}" "${filePath}"`;
+  function sign(filePath) {
+    const cmd = `codesign --force --options runtime --timestamp --entitlements "${entitlements}" --sign "${identity}" "${filePath}"`;
     console.log(`  [sign] ${path.relative(appPath, filePath)}`);
     execSync(cmd, { stdio: "pipe" });
   }
 
   // ── 1. Sign all native binaries in app.asar.unpacked ──────────────────────
+  // electron-builder's --deep pass does not reliably recurse into
+  // app.asar.unpacked, so we sign these explicitly.
   const unpackedDir = path.join(
     appPath,
     "Contents",
@@ -50,32 +50,27 @@ exports.default = async function afterSign(context) {
         const full = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           walkAndSign(full);
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name);
-          if (nativeExts.has(ext)) {
-            sign(full);
-          }
+        } else if (entry.isFile() && nativeExts.has(path.extname(entry.name))) {
+          sign(full);
         }
       }
     }
 
     walkAndSign(unpackedDir);
 
-    // Sign executables in ffmpeg-static and yt-dlp area (no extension)
-    const execBins = [
-      path.join(
-        unpackedDir,
-        "node_modules",
-        "ffmpeg-static",
-        "ffmpeg"
-      ),
-    ];
-    for (const bin of execBins) {
-      if (fs.existsSync(bin)) sign(bin);
-    }
+    // ffmpeg executable (no extension)
+    const ffmpegBin = path.join(
+      unpackedDir,
+      "node_modules",
+      "ffmpeg-static",
+      "ffmpeg"
+    );
+    if (fs.existsSync(ffmpegBin)) sign(ffmpegBin);
   }
 
-  // ── 2. Sign yt-dlp in Contents/Resources/bin/ ─────────────────────────────
+  // ── 2. Sign stand-alone executables in Contents/Resources/bin/ ────────────
+  // yt-dlp lives here and is not part of the bundle structure that
+  // electron-builder walks.
   const binDir = path.join(appPath, "Contents", "Resources", "bin");
   if (fs.existsSync(binDir)) {
     for (const entry of fs.readdirSync(binDir, { withFileTypes: true })) {
@@ -85,105 +80,5 @@ exports.default = async function afterSign(context) {
     }
   }
 
-  // ── 3. Re-sign Electron Framework libraries ────────────────────────────────
-  const frameworkLibDir = path.join(
-    appPath,
-    "Contents",
-    "Frameworks",
-    "Electron Framework.framework",
-    "Versions",
-    "A",
-    "Libraries"
-  );
-  if (fs.existsSync(frameworkLibDir)) {
-    for (const entry of fs.readdirSync(frameworkLibDir, { withFileTypes: true })) {
-      if (entry.isFile()) sign(path.join(frameworkLibDir, entry.name));
-    }
-  }
-
-  const crashpad = path.join(
-    appPath,
-    "Contents",
-    "Frameworks",
-    "Electron Framework.framework",
-    "Versions",
-    "A",
-    "Helpers",
-    "chrome_crashpad_handler"
-  );
-  if (fs.existsSync(crashpad)) sign(crashpad);
-
-  // ── 4. Re-sign helper app executables ─────────────────────────────────────
-  const helperNames = [
-    "Tone Architect Helper",
-    "Tone Architect Helper (GPU)",
-    "Tone Architect Helper (Plugin)",
-    "Tone Architect Helper (Renderer)",
-  ];
-
-  for (const h of helperNames) {
-    const helperExe = path.join(
-      appPath,
-      "Contents",
-      "Frameworks",
-      `${h}.app`,
-      "Contents",
-      "MacOS",
-      h
-    );
-    if (fs.existsSync(helperExe)) sign(helperExe, true);
-  }
-
-  // ── 5. Re-sign Electron Framework bundle ──────────────────────────────────
-  const electronFramework = path.join(
-    appPath,
-    "Contents",
-    "Frameworks",
-    "Electron Framework.framework"
-  );
-  if (fs.existsSync(electronFramework)) sign(electronFramework);
-
-  // ── 6. Re-sign Squirrel + other Obj-C frameworks ──────────────────────────
-  const frameworks = ["ReactiveObjC", "Squirrel", "Mantle"];
-  for (const fw of frameworks) {
-    const fwPath = path.join(
-      appPath,
-      "Contents",
-      "Frameworks",
-      `${fw}.framework`
-    );
-    if (fs.existsSync(fwPath)) sign(fwPath);
-  }
-
-  // ShipIt inside Squirrel
-  const shipit = path.join(
-    appPath,
-    "Contents",
-    "Frameworks",
-    "Squirrel.framework",
-    "Versions",
-    "A",
-    "Resources",
-    "ShipIt"
-  );
-  if (fs.existsSync(shipit)) sign(shipit, true);
-
-  // ── 7. Re-sign helper app bundles ─────────────────────────────────────────
-  for (const h of helperNames) {
-    const helperBundle = path.join(
-      appPath,
-      "Contents",
-      "Frameworks",
-      `${h}.app`
-    );
-    if (fs.existsSync(helperBundle)) sign(helperBundle, true);
-  }
-
-  // ── 8. Re-sign the main executable + app bundle ───────────────────────────
-  const mainExe = path.join(appPath, "Contents", "MacOS", appName);
-  if (fs.existsSync(mainExe)) sign(mainExe, true);
-
-  sign(appPath, true);
-
-  console.log("\n[afterSign] All native binaries re-signed successfully.\n");
+  console.log("\n[afterSign] Supplemental signing complete.\n");
 };
