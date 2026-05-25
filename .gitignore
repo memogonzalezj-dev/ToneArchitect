@@ -21,3 +21,5 @@ File.txt
 npm-debug.log*
 build-signed.sh
 tone-architect-cert.p12
+app\ password
+app_password
