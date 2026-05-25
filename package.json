@@ -35,7 +35,7 @@
       "**/node_modules/ffmpeg-static/**",
       "**/node_modules/@node-llama-cpp/**"
     ],
-    "afterSign": "scripts/afterSign.js",
+    "afterPack": "scripts/afterPack.js",
     "mac": {
       "category": "public.app-category.music",
       "icon": "build/icon.icns",
