@@ -357,6 +357,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 12, y: 20 },
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -419,6 +420,44 @@ ipcMain.handle('set-api-key', (_e, apiKey) => {
 ipcMain.handle('delete-api-key', () => {
   const keyPath = getKeyPath();
   if (fs.existsSync(keyPath)) fs.unlinkSync(keyPath);
+});
+
+// ─── IPC: Preset history ─────────────────────────────────────────────────────
+
+function getPresetsDir() {
+  return path.join(app.getPath('userData'), 'presets');
+}
+
+ipcMain.handle('save-preset-history', (_e, { preset, deviceId, deviceLabel, query }) => {
+  const dir = getPresetsDir();
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const id = Date.now().toString();
+  const safeName = (preset.name || 'preset').replace(/[^a-z0-9]/gi, '_').slice(0, 40);
+  const entry = { id, timestamp: new Date().toISOString(), preset, deviceId, deviceLabel, query };
+  fs.writeFileSync(path.join(dir, `${id}_${safeName}.json`), JSON.stringify(entry));
+  return { success: true, id };
+});
+
+ipcMain.handle('list-preset-history', () => {
+  const dir = getPresetsDir();
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.json'))
+    .map(f => {
+      try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')); }
+      catch { return null; }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.id.localeCompare(a.id));
+});
+
+ipcMain.handle('delete-preset-history', (_e, id) => {
+  const dir = getPresetsDir();
+  if (!fs.existsSync(dir)) return { success: true };
+  fs.readdirSync(dir)
+    .filter(f => f.startsWith(id + '_') && f.endsWith('.json'))
+    .forEach(f => fs.unlinkSync(path.join(dir, f)));
+  return { success: true };
 });
 
 // ─── IPC: Preset save dialog ──────────────────────────────────────────────────

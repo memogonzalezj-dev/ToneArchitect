@@ -44,8 +44,10 @@ function sanitizeParameters(
   const out: Record<string, number | boolean | string> = {};
   for (const [k, v] of Object.entries(params)) {
     if (typeof v === "number" && UNIT_PARAMS.has(k.toLowerCase())) {
-      // Clamp to 0–1; values like -10 or 10 from the AI are wrong for these params
-      out[k] = Math.max(0, Math.min(1, v));
+      // If the AI outputs a percentage-style value (e.g. Mix: 50 instead of 0.5),
+      // normalize it to 0–1 before clamping. Applies when value is in (1, 100].
+      const normalized = v > 1.0 && v <= 100 ? v / 100 : v;
+      out[k] = Math.max(0, Math.min(1, normalized));
     } else {
       out[k] = v;
     }

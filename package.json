@@ -31,7 +31,11 @@
       "package.json"
     ],
     "extraResources": [],
-    "asarUnpack": ["**/node_modules/ffmpeg-static/**"],
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**",
+      "**/node_modules/@node-llama-cpp/**"
+    ],
+    "afterPack": "scripts/afterPack.js",
     "mac": {
       "category": "public.app-category.music",
       "icon": "build/icon.icns",
@@ -42,10 +46,7 @@
       "minimumSystemVersion": "12.0",
       "target": [{ "target": "dmg", "arch": ["arm64"] }],
       "identity": "Guillermo Gonzalez Jimenez (7H65YB49C7)",
-      "preAutoEntitlements": false,
-      "notarize": {
-        "teamId": "7H65YB49C7"
-      }
+      "preAutoEntitlements": false
     },
     "dmg": {
       "contents": [

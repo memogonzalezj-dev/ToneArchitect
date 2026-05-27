@@ -23,4 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getConsent:            ()        => ipcRenderer.invoke('get-consent'),
   setConsent:            (value)   => ipcRenderer.invoke('set-consent', value),
   downloadYoutubeAudio:  (url)     => ipcRenderer.invoke('download-youtube-audio', url),
+  savePresetHistory:   (payload) => ipcRenderer.invoke('save-preset-history', payload),
+  listPresetHistory:   ()        => ipcRenderer.invoke('list-preset-history'),
+  deletePresetHistory: (id)      => ipcRenderer.invoke('delete-preset-history', id),
 });

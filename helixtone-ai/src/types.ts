@@ -48,6 +48,15 @@ export interface AudioAnalysis {
   description:  string;   // human-readable text for the Llama prompt
 }
 
+export interface PresetHistoryEntry {
+  id: string;
+  timestamp: string;
+  preset: TonePreset;
+  deviceId: number;
+  deviceLabel: string;
+  query: string;
+}
+
 export interface ElectronAPI {
   hasApiKey: () => Promise<boolean>;
   getApiKey: () => Promise<string | null>;
@@ -80,6 +89,9 @@ export interface ElectronAPI {
   getConsent:           () => Promise<boolean | null>;
   setConsent:           (value: boolean) => Promise<boolean>;
   downloadYoutubeAudio: (url: string) => Promise<Uint8Array>;
+  savePresetHistory:   (payload: { preset: TonePreset; deviceId: number; deviceLabel: string; query: string }) => Promise<{ success: boolean; id: string }>;
+  listPresetHistory:   () => Promise<PresetHistoryEntry[]>;
+  deletePresetHistory: (id: string) => Promise<{ success: boolean }>;
 }
 
 declare global {
