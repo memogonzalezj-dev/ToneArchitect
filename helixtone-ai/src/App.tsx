@@ -19,10 +19,11 @@ import {
 import { analyzeTone } from "./services/llamaService";
 import { analyzeAudio, analyzeYoutubeAudio } from "./services/audioAnalysis";
 import { downloadPreset } from "./services/helixService";
-import { TonePreset, ToneRequest, AudioAnalysis } from "./types";
+import { TonePreset, ToneRequest, AudioAnalysis, PresetHistoryEntry } from "./types";
 import { DEVICES, DeviceConfig, DEFAULT_DEVICE } from "./config/devices";
 import LlamaSetup from "./components/LlamaSetup";
 import FeedbackPanel from "./components/FeedbackPanel";
+import HistorySidebar from "./components/HistorySidebar";
 
 type AppView = "checking" | "setup" | "main";
 
@@ -35,6 +36,9 @@ export default function App() {
   const [deviceOpen, setDeviceOpen] = useState(false);
   const deviceRef                   = useRef<HTMLDivElement>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+
+  const [history, setHistory]                   = useState<PresetHistoryEntry[]>([]);
+  const [historyCollapsed, setHistoryCollapsed] = useState(true);
 
   const [query, setQuery]         = useState("");
   const [guitar, setGuitar]       = useState("");
@@ -62,6 +66,15 @@ export default function App() {
   useEffect(() => {
     setView("setup");
   }, []);
+
+  const loadHistory = async () => {
+    const entries = await window.electronAPI.listPresetHistory();
+    setHistory(entries);
+  };
+
+  useEffect(() => {
+    if (view === "main") loadHistory();
+  }, [view]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -128,6 +141,12 @@ export default function App() {
       const result = await analyzeTone(request, device, audioAnalysis ?? undefined);
       setPreset(result);
       setShowFeedback(true);
+      window.electronAPI.savePresetHistory({
+        preset: result,
+        deviceId: device.deviceId,
+        deviceLabel: device.label,
+        query,
+      }).then(() => loadHistory()).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to analyze tone. Please try again.");
     } finally {
@@ -148,6 +167,16 @@ export default function App() {
   const handleChangeModel = () => {
     reset();
     setView("setup");
+  };
+
+  const handleRedownload = (entry: PresetHistoryEntry) => {
+    const dev = DEVICES.find(d => d.deviceId === entry.deviceId) ?? DEFAULT_DEVICE;
+    downloadPreset(entry.preset, dev);
+  };
+
+  const handleDeleteHistory = async (id: string) => {
+    await window.electronAPI.deletePresetHistory(id);
+    setHistory(prev => prev.filter(e => e.id !== id));
   };
 
   // ── Views ────────────────────────────────────────────────────────────────────
@@ -171,7 +200,15 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0B0E] text-[#E0E0E0] font-sans">
+    <div className="min-h-screen bg-[#0A0B0E] text-[#E0E0E0] font-sans flex">
+      <HistorySidebar
+        history={history}
+        collapsed={historyCollapsed}
+        onToggle={() => setHistoryCollapsed(c => !c)}
+        onRedownload={handleRedownload}
+        onDelete={handleDeleteHistory}
+      />
+      <div className="flex-1 flex flex-col min-w-0">
       <header className="border-b border-white/10 px-8 py-6 flex items-center justify-between sticky top-0 bg-[#0A0B0E]/80 backdrop-blur-md z-50">
         <div className="flex flex-col cursor-pointer" onClick={reset}>
           <span className="text-[10px] uppercase tracking-[0.3em] text-white/40 mb-1">AI Guitar Preset Generator</span>
@@ -577,6 +614,7 @@ export default function App() {
         <div>Tone Architect v1.5.0 • Not affiliated with Line 6, Inc.</div>
         <div>© 2026 MEMO GONZALEZ • Compatible with Line 6 {device.label}</div>
       </footer>
+      </div>
 
       <AnimatePresence>
         {showFeedback && preset && (

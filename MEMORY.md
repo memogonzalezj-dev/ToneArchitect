@@ -17,7 +17,7 @@ Runs 100% locally via Llama 3.1 8B + Apple Metal. No cloud. No subscriptions.
 
 ---
 
-## Current Version: 1.1.0
+## Current Version: 1.5.0 ✅ Released & Notarized
 
 ### Version bump checklist (every release):
 - [ ] `package.json` → `"version"`
@@ -40,7 +40,7 @@ Runs 100% locally via Llama 3.1 8B + Apple Metal. No cloud. No subscriptions.
 | Model path | `~/Library/Application Support/tone-architect/models/llama3.1-8b.gguf` |
 | IPC bridge | `electron/preload.js` contextBridge |
 | Feedback | Google Sheets via Apps Script POST |
-| Distribution | Signed DMG (Apple Developer ID) + `install.sh` one-liner |
+| Distribution | Signed + notarized DMG (Apple Developer ID) + Homebrew cask |
 
 ---
 
@@ -62,10 +62,16 @@ ToneAI/
 │   └── services/
 │       ├── llamaService.ts  # Prompt builder, analyzeTone(), block hard cap, Stadium catalog
 │       ├── helixService.ts  # HLX JSON generator (.hlx), routes Stadium to stadiumService
-│       └── stadiumService.ts # HSP JSON generator (.hsp) for Helix Stadium (NEW)
+│       └── stadiumService.ts # HSP JSON generator (.hsp) for Helix Stadium
+├── scripts/
+│   ├── afterPack.js         # electron-builder hook — signs asar.unpacked + bin/ BEFORE codesign
+│   └── afterSign.js         # (kept for reference, not active — afterPack is used instead)
+├── build/
+│   └── entitlements.mac.plist # allow-jit, allow-unsigned-executable-memory, network.client
+├── build-signed.sh          # ← GITIGNORED: full build + sign + notarize + staple script
 ├── install.sh               # One-command installer (handles Gatekeeper quarantine)
 ├── MEMORY.md                # ← this file
-└── package.json             # version, build config, scripts
+└── package.json             # version, build config, afterPack hook, asarUnpack
 ```
 
 ---
@@ -315,19 +321,43 @@ NEVER derive model IDs from display names. Only add confirmed IDs from actual .h
 
 ## Security
 
-- **Old app-specific password `qgbq-uhiw-sokv-aczk` EXPOSED — must rotate at appleid.apple.com**
-- `build-signed.sh` — contains credentials, in `.gitignore`, NEVER commit
+- Old app-specific password `qgbq-uhiw-sokv-aczk` was EXPOSED — already rotated ✅
+- Current app-specific password stored in `~/ToneAI/app password` (gitignored) — `build-signed.sh` reads it from there
+- `build-signed.sh` — contains cert password, in `.gitignore`, NEVER commit
 - `tone-architect-cert.p12` — developer cert, NEVER commit
-- `app password` (untracked file in repo root) — DO NOT commit
+- `app password` (untracked file in repo root) — DO NOT commit, now in .gitignore
 
 ---
 
-## Notarization
+## Build & Release Process (FULLY AUTOMATED as of v1.5.0)
 
-- **Submission ID**: `77a614bc-8212-4fa1-bbdb-dfbfeeb8ce0b` (submitted 2026-05-24T16:04Z)
-- **Status**: UNKNOWN — cannot check because app-specific password was rotated
-- To check: `xcrun notarytool info 77a614bc-... --apple-id memogonzj@icloud.com --team-id 7H65YB49C7 --password <new-app-specific-password>`
-- After notarization passes: `xcrun stapler staple "dist_desktop/Tone Architect-1.1.0-arm64.dmg"`
+```bash
+cd ~/ToneAI && bash build-signed.sh
+```
+
+That single command:
+1. Runs `afterPack.js` hook — pre-signs `app.asar.unpacked` native binaries + `bin/` executables
+2. electron-builder signs the full bundle (computes CodeResources over pre-signed files) ✓
+3. Assembles the DMG
+4. Submits DMG to Apple notarytool — waits for Accepted
+5. Staples the ticket to the DMG
+6. Prints new SHA256
+
+After build completes:
+1. Upload DMG to GitHub release: `gh release upload vX.X.X "dist_desktop/Tone Architect-X.X.X-arm64.dmg" --repo memogonzalezj-dev/ToneArchitect --clobber`
+2. Update Homebrew cask SHA: update `sha256` in `memogonzalezj-dev/homebrew-tap/Casks/tone-architect.rb` via GitHub API
+
+### ⚠️ Critical signing lesson (resolved 2026-05-25)
+- `afterPack` (before signing) is required — NOT `afterSign` (after signing)
+- Signing `.dylib`/`.node` after CodeResources is computed breaks the bundle seal → "invalid signature" on main exe
+- `@node-llama-cpp` must be in `asarUnpack` so electron-builder can find and sign those binaries via `--deep`
+- Do NOT export `APPLE_APP_SPECIFIC_PASSWORD` during the electron-builder step — it triggers auto-notarization that crashes when the `notarize` config key is absent
+
+### Latest Release: v1.5.0
+- **DMG SHA256:** `e8576a43acca4da39a76d21fe5bbabe9bfc6cf484649bb6294839b24dc4849f7`
+- **GitHub Release:** `https://github.com/memogonzalezj-dev/ToneArchitect/releases/tag/v1.5.0`
+- **Homebrew:** `brew install --cask tone-architect` (tap: `memogonzalezj-dev/tap`)
+- **Notarization:** ✅ Accepted, ticket stapled
 
 ---
 
@@ -339,24 +369,57 @@ NEVER derive model IDs from display names. Only add confirmed IDs from actual .h
   - Endpoint in `electron/main.js` → `FEEDBACK_ENDPOINT`
   - Columns: Timestamp, Device, Query, Preset Name, Blocks, Rating, Feedback, App Version, Consent, Preset JSON
 - **Consent:** stored in `~/Library/Application Support/tone-architect/consent.json`
+- First launch shows macOS Keychain prompt ("tone-architect Safe Storage") — normal, click Always Allow
 
 ---
 
-## Open PRs
+## AI Prompt Quality Notes (from 1,060 real preset analysis + HX_ModelCatalog.json)
 
-- **PR #9** — `chore/gitignore-signing-files`: adds `build-signed.sh` + `tone-architect-cert.p12` to .gitignore
-- **PR #10** — `feat/new-device-support`: all 5 devices (Stadium, Floor, LT, Stomp, Stomp XL) + .hsp generator + expanded Stadium catalog
+- Official model catalog: `/Volumes/Extended MAC/Helix/HX_ModelCatalog.json` — authoritative source for all param names
+- Real preset corpus: `/Volumes/Extended MAC/Guitar Stuff/Effects/` (242 files) + Metallica Megapack
+- Key special-case amp params to always reference: Ch1Drive (Matchstick Ch1), Ch2Drive (Matchstick Ch2), BrtDrive/NrmDrive (BritTrem), LeadGain/LeadDrive (CaliIV Lead)
+- JazzRivet120 has NO Sag/Hum/Bias/BiasX params
+- EssexA30 has NO Mid param — uses Cut instead
 
 ---
 
-## Latest Release
+## In-Progress: Preset History (v1.6.0)
 
-- **DMG:** `dist_desktop/Tone Architect-1.1.0-arm64.dmg`
-- **GitHub Release:** `https://github.com/memogonzalezj-dev/ToneArchitect/releases/tag/v1.1.0`
-- **Install command:**
-  ```bash
-  curl -fsSL https://raw.githubusercontent.com/memogonzalezj-dev/ToneArchitect/main/install.sh | bash
-  ```
+**Branch:** `session/v1.6.0-preset-history`
+**Status:** Feature complete, one cosmetic bug remaining.
+
+### What was built (2026-05-24)
+
+All 5 files touched:
+
+| File | Change |
+|---|---|
+| `electron/main.js` | Added `getPresetsDir()` + 3 IPC handlers: `save-preset-history`, `list-preset-history`, `delete-preset-history` |
+| `electron/preload.js` | Exposed `savePresetHistory`, `listPresetHistory`, `deletePresetHistory` |
+| `helixtone-ai/src/types.ts` | Added `PresetHistoryEntry` interface + 3 methods to `ElectronAPI` |
+| `helixtone-ai/src/components/HistorySidebar.tsx` | New collapsible left sidebar (48px collapsed / 260px expanded, clock icon, count badge, list with re-download + trash) |
+| `helixtone-ai/src/App.tsx` | Auto-save on generation, load history on mount, re-download + delete handlers, root layout changed to `flex` row with sidebar |
+
+Storage path: `~/Library/Application Support/tone-architect/presets/<timestamp>_<name>.json`
+
+### ⚠️ Remaining bug: traffic light overlap
+
+The macOS minimize/maximize/close buttons (`titleBarStyle: 'hiddenInset'` in `electron/main.js`) overlap the top of the `HistorySidebar` toggle button.
+
+**Fix needed (pick one):**
+- Add a `h-[38px] flex-shrink-0` spacer `<div>` at the very top of `motion.aside` in `HistorySidebar.tsx` (before the toggle button), OR
+- Add `trafficLightPosition: { x: 10, y: 50 }` to the `BrowserWindow` config in `electron/main.js` to push the buttons below the toggle zone
+
+Spacer approach is simpler — just push the toggle button down past y≈38.
+
+---
+
+## Next Steps
+
+1. **Fix traffic light overlap** — one-liner in `HistorySidebar.tsx`, then ship v1.6.0
+2. **Tone pane on the left** — UI improvement (sidebar showing tone controls/results)
+3. **Expand Stadium amp catalog** — each new .hsp file from beta users adds confirmed model IDs
+4. **Post in beta chat** asking for Pod Go + HX One preset files
 
 ---
 
@@ -366,49 +429,6 @@ NEVER derive model IDs from display names. Only add confirmed IDs from actual .h
 |---|---|---|
 | Pod Go | Waitlisted | Post in beta chat — one factory or personal `.hlx` is all we need |
 | HX One | Waitlisted | Post in beta chat — same ask, one file |
-
----
-
-## Preset History (v1.2.0 — Next Feature)
-
-Highest-priority v1.2.0 feature. Pure upside — no format risk. Something helixtones literally cannot offer.
-
-**Plan:**
-- Save every generated preset to `~/Library/Application Support/tone-architect/presets/` as JSON
-  - Fields: preset JSON, query, device, date, rating (if given)
-- Sidebar in the app showing history
-  - Click to re-download, re-view, or delete
-- Persists across app launches, 100% offline
-
----
-
-## Real File Collection Notes
-
-More Stomp examples are valuable — the more real files we have, the more confident we are the amp/cab fix is correct.
-
-**Priority edge cases to collect:**
-- Presets with different amp/cab combinations
-- Presets with **no amp** (effects-only chain) — most likely to expose generator bugs
-- Presets with **multiple drives** in the chain
-
----
-
-## Next Steps
-
-1. **Rotate app-specific password** ✅ Done (2026-05-24)
-2. **Check notarization status** — submission `77a614bc`, run `xcrun notarytool info` with new password when ready
-3. **Merge PR #9** (gitignore) and **PR #10** (device support) — `feat/new-device-support` branch also has AI catalog improvements (commit `1a3bddd`)
-4. **Expand Stadium amp catalog** — each new .hsp file dropped by a user adds more confirmed model IDs
-5. **Build preset history** (see section above) — start here for v1.2.0
-6. **Post in beta chat** asking for Pod Go + HX One preset files
-
-## AI Prompt Quality Notes (from 1,060 real preset analysis + HX_ModelCatalog.json)
-
-- Official model catalog: `/Volumes/Extended MAC/Helix/HX_ModelCatalog.json` — authoritative source for all param names
-- Real preset corpus: `/Volumes/Extended MAC/Guitar Stuff/Effects/` (242 files) + Metallica Megapack
-- Key special-case amp params to always reference: Ch1Drive (Matchstick Ch1), Ch2Drive (Matchstick Ch2), BrtDrive/NrmDrive (BritTrem), LeadGain/LeadDrive (CaliIV Lead)
-- JazzRivet120 has NO Sag/Hum/Bias/BiasX params
-- EssexA30 has NO Mid param — uses Cut instead
 
 ---
 
