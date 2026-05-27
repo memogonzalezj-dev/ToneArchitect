@@ -34,7 +34,7 @@ export default function FeedbackPanel({ preset, device, query, onClose }: Props)
       blocks:          preset.blocks.length,
       rating,
       feedback:        feedback.trim(),
-      app_version:     "1.5.0-beta",
+      app_version:     "1.6.0-beta",
       trainingConsent: consent === true,
       preset_json:     JSON.stringify(preset),
     };
